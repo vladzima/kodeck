@@ -31,7 +31,6 @@ export function WorktreeCreateModal() {
   const projectId = useAppStore((s) => s.worktreeCreateProjectId);
   const setOpen = useAppStore((s) => s.setWorktreeCreateModalOpen);
   const projects = useAppStore((s) => s.projects);
-  const selectedWorktreePath = useAppStore((s) => s.selectedWorktreePath);
   const branches = useAppStore((s) => s.branches);
   const setBranches = useAppStore((s) => s.setBranches);
   const prSearchResults = useAppStore((s) => s.prSearchResults);
@@ -59,17 +58,24 @@ export function WorktreeCreateModal() {
 
   // Reset state when modal opens (only on open transition, not on project/store updates)
   const prevOpen = useRef(false);
+  const prevProjectId = useRef<string | null>(null);
   useEffect(() => {
-    if (open && !prevOpen.current) {
+    const isNewOpen = open && (!prevOpen.current || projectId !== prevProjectId.current);
+    if (isNewOpen) {
+      // Look up the fresh project from the store at call time
+      const freshProject = useAppStore.getState().projects.find((p) => p.id === projectId);
+      const freshSelectedPath = useAppStore.getState().selectedWorktreePath;
+
       setActiveTab("new-branch");
       setBranchName("");
-      setBaseBranch(project?.worktrees.find((w) => w.isMain)?.branch ?? "main");
+      setBaseBranch(freshProject?.worktrees.find((w) => w.isMain)?.branch ?? "main");
       setSelectedBranch(null);
       setSelectedPR(null);
       setBranchFilter("");
       setPrQuery("");
-      setCopyFromPath(selectedWorktreePath ?? project?.worktrees[0]?.path ?? "");
-      setCopyPaths(project?.worktreeCopyPaths ?? []);
+      const initialCopyFrom = freshSelectedPath ?? freshProject?.worktrees[0]?.path ?? "";
+      setCopyFromPath(initialCopyFrom);
+      setCopyPaths(freshProject?.worktreeCopyPaths ?? []);
       setSaveCopyConfig(false);
       setIsCreating(false);
       setCreateError(null);
@@ -78,13 +84,13 @@ export function WorktreeCreateModal() {
       setPRSearchResults([]);
       setScannedCopyPaths([]);
       // Immediately scan copy paths for the initial source
-      const initialCopyFrom = selectedWorktreePath ?? project?.worktrees[0]?.path ?? "";
-      if (!project?.worktreeCopyPaths && initialCopyFrom) {
+      if (!freshProject?.worktreeCopyPaths && initialCopyFrom) {
         sendMessage({ type: "worktree.scanCopyPaths", worktreePath: initialCopyFrom });
       }
     }
     prevOpen.current = open;
-  }, [open]);
+    prevProjectId.current = projectId;
+  }, [open, projectId]);
 
   // Watch for operation result to close modal or show error
   useEffect(() => {
