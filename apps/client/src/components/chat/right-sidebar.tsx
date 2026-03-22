@@ -251,7 +251,7 @@ export function RightSidebar({
             onClick={() => onStreamingChange(!streaming)}
           >
             <Radio className="h-3.5 w-3.5" />
-            {streaming ? "live" : "batch"}
+            {streaming ? "Live" : "Batch"}
           </button>
         </StatRow>
 

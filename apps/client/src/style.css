@@ -164,6 +164,13 @@
   #app {
     @apply h-full w-full overflow-hidden;
   }
+  button,
+  [role="button"],
+  [role="tab"],
+  select,
+  a {
+    cursor: pointer;
+  }
   * {
     @apply border-border outline-ring/50;
     scrollbar-width: thin;
