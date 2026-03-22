@@ -357,6 +357,14 @@ export function Sidebar() {
     <div className="relative flex h-full shrink-0 flex-col border-r border-border bg-sidebar text-[11px] font-mono text-muted-foreground" style={{ width }}>
       <div className="flex h-10 items-center justify-between border-b border-border px-4">
         <span className="text-[10px] uppercase tracking-wider text-foreground">Projects</span>
+        <button
+          type="button"
+          className="rounded-md p-1 text-muted-foreground/50 transition-colors hover:text-foreground"
+          onClick={handleAddProject}
+          title="Add project"
+        >
+          <Plus className="h-3 w-3" />
+        </button>
       </div>
       <ScrollArea className="flex-1 px-2 py-3">
         <div className="flex flex-col gap-1">
@@ -370,16 +378,6 @@ export function Sidebar() {
           </div>
         )}
       </ScrollArea>
-      <div className="border-t border-border p-2">
-        <button
-          type="button"
-          className="flex w-full items-center gap-1.5 rounded-md px-2 py-1 text-[11px] font-mono text-muted-foreground/60 transition-colors hover:text-foreground"
-          onClick={handleAddProject}
-        >
-          <Plus className="h-3 w-3" />
-          Add project
-        </button>
-      </div>
       {/* Resize handle */}
       <div
         className="absolute right-0 top-0 z-10 h-full w-1 cursor-col-resize hover:bg-primary/30 active:bg-primary/50"
