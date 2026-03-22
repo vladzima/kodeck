@@ -368,6 +368,7 @@ export function Sidebar() {
             <Plus className="h-3 w-3" />
             Add project
           </button>
+          <div className="-mx-2 border-t border-border" />
           {projects.map((project) => (
             <ProjectItem key={project.id} project={project} />
           ))}
