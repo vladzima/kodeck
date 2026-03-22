@@ -56,10 +56,10 @@ export function TabBar() {
           key={session.id}
           role="tab"
           tabIndex={0}
-          className={`group flex h-8 cursor-pointer items-center gap-1.5 rounded-md px-2.5 text-sm transition-colors ${
+          className={`group flex h-full cursor-pointer items-center gap-1.5 px-2.5 text-sm transition-colors ${
             activeSessionId === session.id
-              ? "bg-accent text-accent-foreground"
-              : "text-muted-foreground hover:bg-accent/50"
+              ? "text-foreground border-b-2 border-primary"
+              : "text-muted-foreground hover:text-foreground/70"
           }`}
           onClick={() => setActiveSession(session.id)}
           onKeyDown={(e) => {
