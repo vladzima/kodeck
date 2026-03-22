@@ -78,9 +78,6 @@ importers:
       '@fontsource-variable/space-grotesk':
         specifier: ^5.2.10
         version: 5.2.10
-      '@fontsource/google-sans':
-        specifier: ^5.2.1
-        version: 5.2.1
       '@kodeck/shared':
         specifier: workspace:*
         version: link:../../packages/shared
@@ -545,9 +542,6 @@ packages:
 
   '@fontsource-variable/space-grotesk@5.2.10':
     resolution: {integrity: sha512-yJQO/o35/hAP3CFnpdFTwQku2yzJOae2HIpBmqkOVoxhhXJaQP3g+b6Jrz7u+eI7A5ZdCIf88uMWpBJdFiGr5w==}
-
-  '@fontsource/google-sans@5.2.1':
-    resolution: {integrity: sha512-FteXH18YS0288Bcrjefwyyp7hLwxd8yQBEcmjU/P0BED9c8n8kxwgna3gtMtYyFQx/wIkpyrzj8RaYQyl/4quw==}
 
   '@hono/node-server@1.19.11':
     resolution: {integrity: sha512-dr8/3zEaB+p0D2n/IUrlPF1HZm586qgJNXK1a9fhg/PzdtkK7Ksd5l312tJX2yBuALqDYBlG20QEbayqPyxn+g==}
@@ -4669,8 +4663,6 @@ snapshots:
   '@fontsource-variable/geist@5.2.8': {}
 
   '@fontsource-variable/space-grotesk@5.2.10': {}
-
-  '@fontsource/google-sans@5.2.1': {}
 
   '@hono/node-server@1.19.11(hono@4.12.8)':
     dependencies:
