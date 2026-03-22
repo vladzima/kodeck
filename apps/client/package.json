@@ -10,6 +10,7 @@
   },
   "dependencies": {
     "@fontsource-variable/geist": "^5.2.8",
+    "@fontsource-variable/space-grotesk": "^5.2.10",
     "@kodeck/shared": "workspace:*",
     "@streamdown/code": "^1.1.1",
     "@tailwindcss/vite": "catalog:",
