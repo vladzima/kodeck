@@ -150,7 +150,7 @@ export const useAppStore = create<AppState>((set) => ({
       ];
       const inputHistory = [...data.inputHistory, text];
 
-      chatData.set(sessionId, { ...data, messages, inputHistory });
+      chatData.set(sessionId, { ...data, messages, inputHistory, state: "streaming" });
       return { chatData };
     }),
 
