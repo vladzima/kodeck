@@ -150,6 +150,14 @@ export interface ProjectListMessage {
   type: "project.list";
 }
 
+export interface DialogPickFolderMessage {
+  type: "dialog.pickFolder";
+}
+
+export interface SessionListMessage {
+  type: "session.list";
+}
+
 export type ClientMessage =
   | SessionCreateMessage
   | SessionCloseMessage
@@ -162,7 +170,9 @@ export type ClientMessage =
   | ProjectRemoveMessage
   | WorktreeCreateMessage
   | WorktreeRemoveMessage
-  | ProjectListMessage;
+  | ProjectListMessage
+  | DialogPickFolderMessage
+  | SessionListMessage;
 
 // ============================================
 // Server → Client messages
@@ -248,6 +258,17 @@ export interface ProjectListEvent {
   projects: ProjectWithWorktrees[];
 }
 
+export interface DialogFolderPickedEvent {
+  type: "dialog.folderPicked";
+  path: string | null;
+}
+
+export interface SessionListEvent {
+  type: "session.list";
+  sessions: SessionInfo[];
+  chatHistories: Record<string, ChatMessage[]>;
+}
+
 export interface ServerErrorEvent {
   type: "error";
   message: string;
@@ -268,4 +289,6 @@ export type ServerMessage =
   | TerminalOutputEvent
   | TerminalExitEvent
   | ProjectListEvent
+  | DialogFolderPickedEvent
+  | SessionListEvent
   | ServerErrorEvent;

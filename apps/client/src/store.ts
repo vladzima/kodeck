@@ -3,6 +3,7 @@ import type {
   ChatAssistantMessage,
   ChatMessage,
   ChatSessionState,
+  ChatUserMessage,
   ProjectWithWorktrees,
   SessionInfo,
   ToolCallInfo,
@@ -33,6 +34,7 @@ interface AppState {
   addSession: (session: SessionInfo) => void;
   removeSession: (sessionId: string) => void;
   setActiveSession: (sessionId: string | null) => void;
+  loadSessions: (sessions: SessionInfo[], chatHistories: Record<string, ChatMessage[]>) => void;
 
   // Chat data
   chatData: Map<string, ChatSessionData>;
@@ -76,6 +78,22 @@ export const useAppStore = create<AppState>((set) => ({
       activeSessionId: state.activeSessionId === sessionId ? null : state.activeSessionId,
     })),
   setActiveSession: (sessionId) => set({ activeSessionId: sessionId }),
+
+  loadSessions: (sessions, chatHistories) =>
+    set((state) => {
+      const chatData = new Map(state.chatData);
+      for (const [sessionId, messages] of Object.entries(chatHistories)) {
+        chatData.set(sessionId, {
+          messages,
+          state: "idle",
+          inputHistory: messages
+            .filter((m): m is ChatUserMessage => m.role === "user")
+            .map((m) => m.content),
+        });
+      }
+      const activeSessionId = state.activeSessionId ?? sessions[0]?.id ?? null;
+      return { sessions, chatData, activeSessionId };
+    }),
 
   // Chat data
   chatData: new Map(),
