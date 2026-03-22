@@ -34,7 +34,7 @@ export function CommandPalette({ commands, selectedIndex, onSelect }: CommandPal
             onSelect(cmd);
           }}
         >
-          <span className="font-mono text-xs">{cmd}</span>
+          <span className="font-mono text-xs">/{cmd}</span>
         </div>
       ))}
     </div>

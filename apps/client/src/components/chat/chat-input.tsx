@@ -26,8 +26,9 @@ export function ChatInput({
   const lastEscapeTime = useRef(0);
 
   const showPalette = text.startsWith("/") && state !== "streaming";
+  const query = text.slice(1).toLowerCase(); // strip leading "/"
   const filteredCommands = showPalette
-    ? slashCommands.filter((cmd) => cmd.toLowerCase().startsWith(text.toLowerCase()))
+    ? slashCommands.filter((cmd) => cmd.toLowerCase().startsWith(query))
     : [];
   const paletteOpen = filteredCommands.length > 0;
 
@@ -36,7 +37,7 @@ export function ChatInput({
   }, [text]);
 
   const selectCommand = useCallback((cmd: string) => {
-    setText(cmd + " ");
+    setText("/" + cmd + " ");
     textareaRef.current?.focus();
   }, []);
 
