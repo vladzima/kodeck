@@ -1,0 +1,21 @@
+{
+  "name": "@kodeck/server",
+  "version": "0.0.0",
+  "private": true,
+  "type": "module",
+  "scripts": {
+    "dev": "node --watch --import tsx/esm src/index.ts"
+  },
+  "dependencies": {
+    "@kodeck/shared": "workspace:*",
+    "ws": "^8.18.0",
+    "node-pty": "^1.0.0"
+  },
+  "devDependencies": {
+    "@types/node": "catalog:",
+    "@types/ws": "^8.18.0",
+    "tsx": "^4.19.0",
+    "typescript": "catalog:",
+    "vite-plus": "catalog:"
+  }
+}
