@@ -59,10 +59,10 @@ function WorktreeItem({
   return (
     <button
       type="button"
-      className={`relative flex w-full flex-col gap-0.5 rounded-md px-2 py-1.5 text-left text-sm transition-colors ${
+      className={`relative flex w-full flex-col gap-0.5 rounded-md px-2 py-1 text-left text-[11px] font-mono transition-colors ${
         isSelected
-          ? "bg-sidebar-accent text-sidebar-accent-foreground"
-          : "text-sidebar-foreground/70 hover:bg-sidebar-accent/50"
+          ? "bg-accent text-accent-foreground"
+          : "text-muted-foreground hover:bg-accent/50"
       }`}
       onClick={onSelect}
       onMouseEnter={() => setHovered(true)}
@@ -70,10 +70,10 @@ function WorktreeItem({
     >
       {/* Line 1: Branch + sync indicators */}
       <div className="flex w-full items-center gap-1.5">
-        <GitBranch className="h-3.5 w-3.5 shrink-0" />
+        <GitBranch className="h-3 w-3 shrink-0" />
         <span className="min-w-0 flex-1 truncate">{worktree.branch}</span>
         {!hovered && hasAhead && (
-          <span className="flex shrink-0 items-center gap-1 text-xs">
+          <span className="flex shrink-0 items-center gap-1 text-[10px]">
             <span className="text-green-400">↑{worktree.ahead}</span>
           </span>
         )}
@@ -81,7 +81,7 @@ function WorktreeItem({
 
       {/* Line 2: PR metadata */}
       {!hovered && hasPr && worktree.pr && (
-        <div className="flex w-full items-center gap-0 pl-5 text-xs text-sidebar-foreground/50">
+        <div className="flex w-full items-center gap-0 pl-[18px] text-[10px] text-muted-foreground/50">
           <span>#{worktree.pr.number}</span>
           {worktree.pr.ciStatus && (
             <>
@@ -101,7 +101,7 @@ function WorktreeItem({
       {/* Behind nudge — persistent pulsing indicator when behind > 0 and not hovered */}
       {!hovered && hasBehind && (
         <div className="absolute right-1 top-1/2 -translate-y-1/2">
-          <span className="animate-pulse rounded-full bg-orange-400/15 px-1.5 py-0.5 text-[10px] font-medium text-orange-400">
+          <span className="animate-pulse rounded-full bg-orange-400/15 px-1.5 py-0.5 text-[9px] font-medium text-orange-400">
             pull
           </span>
         </div>
@@ -109,10 +109,10 @@ function WorktreeItem({
 
       {/* Hover overlay with action icons */}
       {hovered && (
-        <div className="absolute inset-0 flex items-center justify-center gap-3 rounded-md bg-sidebar-accent/90">
+        <div className="absolute inset-0 flex items-center justify-center gap-3 rounded-md bg-accent/90">
           <button
             type="button"
-            className="rounded-sm p-1 text-sidebar-foreground/60 transition-colors hover:bg-sidebar-accent hover:text-sidebar-foreground"
+            className="rounded-sm p-1 text-muted-foreground/60 transition-colors hover:bg-accent hover:text-foreground"
             onClick={(e) => {
               e.stopPropagation();
               sendMessage({ type: "worktree.pull", worktreePath: worktree.path });
@@ -123,7 +123,7 @@ function WorktreeItem({
           </button>
           <button
             type="button"
-            className="rounded-sm p-1 text-sidebar-foreground/60 transition-colors hover:bg-sidebar-accent hover:text-sidebar-foreground"
+            className="rounded-sm p-1 text-muted-foreground/60 transition-colors hover:bg-accent hover:text-foreground"
             onClick={(e) => {
               e.stopPropagation();
               sendMessage({ type: "worktree.push", worktreePath: worktree.path });
@@ -177,20 +177,20 @@ function ProjectItem({ project }: { project: ProjectWithWorktrees }) {
       <div className="flex w-full items-center gap-0">
         <button
           type="button"
-          className="flex min-w-0 flex-1 items-center gap-2 rounded-md px-2 py-1.5 text-left text-sm font-medium text-sidebar-foreground transition-colors hover:bg-sidebar-accent/50"
+          className="flex min-w-0 flex-1 items-center gap-1.5 rounded-md px-2 py-1 text-left text-[10px] uppercase tracking-wider text-foreground transition-colors hover:text-foreground/80"
           onClick={() => setExpanded(!expanded)}
         >
           {expanded ? (
-            <ChevronDown className="h-3.5 w-3.5 shrink-0" />
+            <ChevronDown className="h-3 w-3 shrink-0 text-muted-foreground/50" />
           ) : (
-            <ChevronRight className="h-3.5 w-3.5 shrink-0" />
+            <ChevronRight className="h-3 w-3 shrink-0 text-muted-foreground/50" />
           )}
-          <FolderGit2 className="h-3.5 w-3.5 shrink-0" />
+          <FolderGit2 className="h-3 w-3 shrink-0" />
           <span className="truncate">{project.name}</span>
         </button>
         <button
           type="button"
-          className="shrink-0 rounded-md p-1 text-sidebar-foreground/50 transition-colors hover:bg-sidebar-accent/50 hover:text-sidebar-foreground"
+          className="shrink-0 rounded-md p-1 text-muted-foreground/50 transition-colors hover:bg-accent/50 hover:text-foreground"
           onClick={(e) => {
             e.stopPropagation();
             setWorktreeCreateProjectId(project.id);
@@ -258,32 +258,32 @@ function DebugPanel() {
   return (
     <div className="flex flex-col gap-2">
       <div className="flex items-center justify-between">
-        <span className="text-[10px] uppercase tracking-wider text-sidebar-foreground/50">
+        <span className="text-[10px] uppercase tracking-wider text-muted-foreground/40">
           Claude Processes ({debugProcesses.length})
         </span>
         <button
           type="button"
-          className="cursor-pointer text-sidebar-foreground/50 transition-colors hover:text-sidebar-foreground"
+          className="cursor-pointer text-muted-foreground/50 transition-colors hover:text-foreground"
           onClick={() => sendMessage({ type: "debug.listProcesses" })}
         >
           <RefreshCw className="h-3 w-3" />
         </button>
       </div>
       {debugProcesses.length === 0 ? (
-        <span className="text-xs text-sidebar-foreground/30">No active processes</span>
+        <span className="text-[10px] text-muted-foreground/30">No active processes</span>
       ) : (
         <div className="flex flex-col gap-1.5">
           {debugProcesses.map((proc) => (
             <div
               key={proc.pid}
-              className="flex items-center justify-between rounded-md bg-sidebar-accent/30 px-2 py-1.5 text-xs"
+              className="flex items-center justify-between rounded-md bg-accent/30 px-2 py-1 text-[11px]"
             >
               <div className="flex flex-col gap-0.5 overflow-hidden">
-                <span className="font-mono text-sidebar-foreground">PID {proc.pid}</span>
-                <span className="truncate text-sidebar-foreground/50">
+                <span className="text-foreground">PID {proc.pid}</span>
+                <span className="truncate text-muted-foreground/50">
                   {proc.sessionId ? `session: ${proc.sessionId.slice(0, 8)}…` : proc.cwd}
                 </span>
-                <span className="text-sidebar-foreground/40">{formatUptime(proc.uptime)}</span>
+                <span className="text-muted-foreground/40">{formatUptime(proc.uptime)}</span>
               </div>
               <button
                 type="button"
@@ -291,7 +291,7 @@ function DebugPanel() {
                 onClick={() => sendMessage({ type: "debug.killProcess", pid: proc.pid })}
                 title="Kill process"
               >
-                <Skull className="h-3.5 w-3.5" />
+                <Skull className="h-3 w-3" />
               </button>
             </div>
           ))}
@@ -354,32 +354,31 @@ export function Sidebar() {
   };
 
   return (
-    <div className="relative flex h-full shrink-0 flex-col border-r border-border bg-sidebar" style={{ width }}>
-      <div className="flex h-10 items-center justify-between border-b border-sidebar-border px-3">
-        <span className="text-sm font-semibold text-sidebar-foreground">Projects</span>
+    <div className="relative flex h-full shrink-0 flex-col border-r border-border bg-sidebar text-[11px] font-mono text-muted-foreground" style={{ width }}>
+      <div className="flex h-10 items-center justify-between border-b border-border px-4">
+        <span className="text-[10px] uppercase tracking-wider text-foreground">Projects</span>
       </div>
-      <ScrollArea className="flex-1 px-2 py-2">
+      <ScrollArea className="flex-1 px-2 py-3">
         <div className="flex flex-col gap-1">
           {projects.map((project) => (
             <ProjectItem key={project.id} project={project} />
           ))}
         </div>
         {debugMode && (
-          <div className="mt-4 border-t border-sidebar-border pt-3">
+          <div className="mt-4 border-t border-border pt-3">
             <DebugPanel />
           </div>
         )}
       </ScrollArea>
-      <div className="border-t border-sidebar-border p-2">
-        <Button
-          variant="ghost"
-          size="sm"
-          className="w-full justify-start gap-2 text-sidebar-foreground/70"
+      <div className="border-t border-border p-2">
+        <button
+          type="button"
+          className="flex w-full items-center gap-1.5 rounded-md px-2 py-1 text-[11px] font-mono text-muted-foreground/60 transition-colors hover:text-foreground"
           onClick={handleAddProject}
         >
-          <Plus className="h-4 w-4" />
+          <Plus className="h-3 w-3" />
           Add project
-        </Button>
+        </button>
       </div>
       {/* Resize handle */}
       <div
