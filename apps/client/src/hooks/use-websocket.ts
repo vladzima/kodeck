@@ -5,6 +5,16 @@ import { useAppStore } from "../store.ts";
 let wsInstance: WebSocket | null = null;
 let initialized = false;
 
+const notificationSound = new Audio("/notification.mp3");
+notificationSound.volume = 0.5;
+
+function playNotification(): void {
+  notificationSound.currentTime = 0;
+  notificationSound.play().catch(() => {
+    // Browser may block autoplay before user interaction — ignore
+  });
+}
+
 export function sendMessage(msg: ClientMessage): void {
   if (wsInstance && wsInstance.readyState === WebSocket.OPEN) {
     wsInstance.send(JSON.stringify(msg));
@@ -45,14 +55,21 @@ function handleServerMessage(msg: ServerMessage): void {
 
     case "chat.permission_request":
       state.setPendingPermission(msg.sessionId, msg.permission);
+      playNotification();
       break;
 
-    case "chat.state":
+    case "chat.state": {
+      const prevState = state.chatData.get(msg.sessionId)?.state;
       state.setChatState(msg.sessionId, msg.state);
       if (msg.state !== "awaiting_permission") {
         state.clearPendingPermission(msg.sessionId);
       }
+      // Notify when Claude finishes work
+      if (msg.state === "idle" && prevState === "streaming") {
+        playNotification();
+      }
       break;
+    }
 
     case "chat.error":
       break;
