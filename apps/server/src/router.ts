@@ -533,8 +533,8 @@ export async function handleMessage(ws: WebSocket, raw: string): Promise<void> {
         const persisted = await loadPersistedSessions();
         const restoredSessions: SessionInfo[] = [];
         const chatHistories: Record<string, ChatMessage[]> = {};
-        const slashCommands: Record<string, string[]> = {};
-        const sessionMetas: Record<string, import("@kodeck/shared").SessionMeta> = {};
+        const restoredSlashCommands: Record<string, string[]> = {};
+        const restoredMetas: Record<string, import("@kodeck/shared").SessionMeta> = {};
 
         for (const p of persisted) {
           // Only restore chat sessions, skip terminal sessions
@@ -542,8 +542,8 @@ export async function handleMessage(ws: WebSocket, raw: string): Promise<void> {
 
           restoredSessions.push(p.info);
           chatHistories[p.info.id] = p.messages;
-          if (p.slashCommands) slashCommands[p.info.id] = p.slashCommands;
-          if (p.meta) sessionMetas[p.info.id] = p.meta;
+          if (p.slashCommands) restoredSlashCommands[p.info.id] = p.slashCommands;
+          if (p.meta) restoredMetas[p.info.id] = p.meta;
 
           // Register in memory maps so lazy spawn works
           sessionInfos.set(p.info.id, p.info);
@@ -551,7 +551,8 @@ export async function handleMessage(ws: WebSocket, raw: string): Promise<void> {
           if (p.meta) sessionMetas.set(p.info.id, p.meta);
         }
 
-        send(ws, { type: "session.list", sessions: restoredSessions, chatHistories, slashCommands, sessionMetas });
+        console.log(`[session.list] loaded ${persisted.length} from disk, sending ${restoredSessions.length} sessions (${Object.keys(chatHistories).length} histories)`);
+        send(ws, { type: "session.list", sessions: restoredSessions, chatHistories, slashCommands: restoredSlashCommands, sessionMetas: restoredMetas });
         break;
       }
 

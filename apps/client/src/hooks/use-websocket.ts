@@ -85,6 +85,7 @@ function handleServerMessage(msg: ServerMessage): void {
       break;
 
     case "session.list":
+      console.log(`[kodeck] Loaded ${msg.sessions.length} sessions from server`);
       state.loadSessions(msg.sessions, msg.chatHistories, msg.slashCommands, msg.sessionMetas);
       break;
 
