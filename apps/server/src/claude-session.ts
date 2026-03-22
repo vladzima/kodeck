@@ -81,7 +81,6 @@ export class ClaudeSession extends EventEmitter<ClaudeSessionEvents> {
         break;
 
       case "assistant": {
-        this.currentMessageId = randomUUID();
         this.setState("streaming");
 
         const content = event.message?.content;
