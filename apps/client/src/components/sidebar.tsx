@@ -381,7 +381,7 @@ export function Sidebar() {
   return (
     <div className="relative flex h-full shrink-0 flex-col border-r border-border bg-sidebar text-xs font-mono text-muted-foreground" style={{ width }}>
       <div className="flex h-10 items-center border-b border-border px-4">
-        <span className="text-sm font-medium tracking-tight text-foreground" style={{ fontFamily: "'Space Grotesk Variable', sans-serif" }}>kodeck</span>
+        <span className="text-sm font-medium uppercase tracking-tight text-foreground" style={{ fontFamily: "'Space Grotesk Variable', sans-serif" }}>kodeck</span>
       </div>
       <div className="px-2 pt-3 pb-2">
         <button
