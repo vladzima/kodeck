@@ -3,6 +3,7 @@ import { execFile, spawn } from "node:child_process";
 import type { WebSocket } from "ws";
 import type {
   ClientMessage,
+  ClaudeProcessInfo,
   ServerMessage,
   SessionInfo,
   ChatMessage,
@@ -64,6 +65,56 @@ const sessions = new Map<string, Session>();
 const sessionMessages = new Map<string, ChatMessage[]>();
 const sessionInfos = new Map<string, SessionInfo>();
 const sessionMetas = new Map<string, SessionMeta>();
+
+async function listClaudeProcesses(): Promise<ClaudeProcessInfo[]> {
+  return new Promise((resolve) => {
+    execFile("ps", ["-eo", "pid,lstart,command"], (err, stdout) => {
+      if (err) { resolve([]); return; }
+
+      const results: ClaudeProcessInfo[] = [];
+      // Collect known PIDs from active sessions
+      const pidToSession = new Map<number, string>();
+      for (const [sessionId, session] of sessions) {
+        if (session instanceof ClaudeSession && session.pid) {
+          pidToSession.set(session.pid, sessionId);
+        }
+      }
+
+      for (const line of stdout.split("\n")) {
+        if (!line.includes("stream-json") || !line.includes("claude")) continue;
+        // Skip the ps command itself
+        if (line.includes("ps -eo")) continue;
+
+        const pidMatch = line.match(/^\s*(\d+)/);
+        if (!pidMatch) continue;
+        const pid = Number(pidMatch[1]);
+
+        // Extract lstart (e.g. "Mon Mar 22 19:00:00 2026")
+        const lstartMatch = line.match(/^\s*\d+\s+((?:\w+ ){4}\d+)/);
+        const startTime = lstartMatch ? new Date(lstartMatch[1]).getTime() : Date.now();
+        const uptime = Math.floor((Date.now() - startTime) / 1000);
+
+        // Extract cwd from --resume or just mark as unknown
+        const cwdMatch = line.match(/--resume\s+\S+/);
+        const cwd = cwdMatch ? "" : "";
+
+        // Try to match to a known session
+        const sessionId = pidToSession.get(pid);
+
+        // Find worktree path from sessionInfos if we have a match
+        let worktreePath = "";
+        if (sessionId) {
+          const info = sessionInfos.get(sessionId);
+          if (info) worktreePath = info.worktreePath;
+        }
+
+        results.push({ pid, cwd: worktreePath || "unknown", sessionId, uptime });
+      }
+
+      resolve(results);
+    });
+  });
+}
 
 function pickFolder(): Promise<string | null> {
   return new Promise((resolve, reject) => {
@@ -501,6 +552,25 @@ export async function handleMessage(ws: WebSocket, raw: string): Promise<void> {
         }
 
         send(ws, { type: "session.list", sessions: restoredSessions, chatHistories, slashCommands, sessionMetas });
+        break;
+      }
+
+      case "debug.listProcesses": {
+        // Find all claude processes spawned with stream-json
+        const processes = await listClaudeProcesses();
+        send(ws, { type: "debug.processList", processes });
+        break;
+      }
+
+      case "debug.killProcess": {
+        try {
+          process.kill(msg.pid, "SIGTERM");
+        } catch {
+          // Process may already be dead
+        }
+        // Refresh list after kill
+        const updated = await listClaudeProcesses();
+        send(ws, { type: "debug.processList", processes: updated });
         break;
       }
 

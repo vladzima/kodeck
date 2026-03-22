@@ -206,6 +206,15 @@ export interface SessionListMessage {
   type: "session.list";
 }
 
+export interface DebugListProcessesMessage {
+  type: "debug.listProcesses";
+}
+
+export interface DebugKillProcessMessage {
+  type: "debug.killProcess";
+  pid: number;
+}
+
 export type ClientMessage =
   | SessionCreateMessage
   | SessionCloseMessage
@@ -223,7 +232,9 @@ export type ClientMessage =
   | WorktreeRemoveMessage
   | ProjectListMessage
   | DialogPickFolderMessage
-  | SessionListMessage;
+  | SessionListMessage
+  | DebugListProcessesMessage
+  | DebugKillProcessMessage;
 
 // ============================================
 // Server → Client messages
@@ -340,6 +351,18 @@ export interface SessionMetaEvent {
   meta: SessionMeta;
 }
 
+export interface ClaudeProcessInfo {
+  pid: number;
+  cwd: string;
+  sessionId?: string;
+  uptime: number;
+}
+
+export interface DebugProcessListEvent {
+  type: "debug.processList";
+  processes: ClaudeProcessInfo[];
+}
+
 export interface ServerErrorEvent {
   type: "error";
   message: string;
@@ -365,4 +388,5 @@ export type ServerMessage =
   | ChatSlashCommandsEvent
   | SessionMetaEvent
   | SessionListEvent
+  | DebugProcessListEvent
   | ServerErrorEvent;

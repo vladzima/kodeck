@@ -94,6 +94,10 @@ function handleServerMessage(msg: ServerMessage): void {
       }
       break;
 
+    case "debug.processList":
+      state.setDebugProcesses(msg.processes);
+      break;
+
     case "error":
       console.error("[kodeck] Server error:", msg.message);
       break;

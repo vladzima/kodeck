@@ -1,5 +1,5 @@
 import { useEffect, useState, useRef } from "react";
-import { MessageSquare, TerminalIcon, X } from "lucide-react";
+import { Bug, MessageSquare, TerminalIcon, X } from "lucide-react";
 import { DEFAULT_MODEL } from "@kodeck/shared";
 import { useAppStore } from "../store.ts";
 import { sendMessage } from "../hooks/use-websocket.ts";
@@ -38,6 +38,8 @@ export function TabBar() {
     activeSessionId,
     setActiveSession,
     selectedWorktreePath,
+    debugMode,
+    setDebugMode,
   } = useAppStore();
 
   const worktreeSessions = sessions.filter(
@@ -133,6 +135,20 @@ export function TabBar() {
           title="New terminal session"
         >
           <TerminalIcon className="h-3.5 w-3.5" />
+        </Button>
+      </div>
+      <div className="ml-auto flex items-center">
+        <Button
+          variant="ghost"
+          size="icon-xs"
+          onClick={() => {
+            setDebugMode(!debugMode);
+            if (!debugMode) sendMessage({ type: "debug.listProcesses" });
+          }}
+          title="Toggle debug panel"
+          className={debugMode ? "text-primary" : ""}
+        >
+          <Bug className="h-3.5 w-3.5" />
         </Button>
       </div>
     </div>

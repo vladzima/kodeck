@@ -46,6 +46,10 @@ export class ClaudeSession extends EventEmitter<ClaudeSessionEvents> {
     return this._state;
   }
 
+  get pid(): number | null {
+    return this.proc?.pid ?? null;
+  }
+
   /** Restore cumulative meta values (e.g. compactions) from persisted state. */
   restoreMeta(meta: SessionMeta): void {
     if (meta.compactions) this._meta.compactions = meta.compactions;

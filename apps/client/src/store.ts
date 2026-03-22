@@ -4,6 +4,7 @@ import type {
   ChatMessage,
   ChatSessionState,
   ChatUserMessage,
+  ClaudeProcessInfo,
   PermissionRequest,
   ProjectWithWorktrees,
   SessionInfo,
@@ -68,6 +69,12 @@ interface AppState {
   cleanedAtIndex: Map<string, number>;
   cleanChat: (sessionId: string) => void;
   restoreChat: (sessionId: string) => void;
+
+  // Debug
+  debugMode: boolean;
+  setDebugMode: (on: boolean) => void;
+  debugProcesses: ClaudeProcessInfo[];
+  setDebugProcesses: (processes: ClaudeProcessInfo[]) => void;
 }
 
 function getOrCreateChatData(chatData: Map<string, ChatSessionData>, sessionId: string): ChatSessionData {
@@ -356,4 +363,9 @@ export const useAppStore = create<AppState>((set) => ({
       cleanedAtIndex.delete(sessionId);
       return { cleanedAtIndex };
     }),
+  // Debug
+  debugMode: false,
+  setDebugMode: (on) => set({ debugMode: on }),
+  debugProcesses: [],
+  setDebugProcesses: (processes) => set({ debugProcesses: processes }),
 }));
