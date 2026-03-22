@@ -1,5 +1,5 @@
 import { useEffect, useState, useRef } from "react";
-import { Bug, MessageSquare, TerminalIcon, X } from "lucide-react";
+import { Bug, MessageSquare, Plus, TerminalIcon, X } from "lucide-react";
 import { DEFAULT_MODEL } from "@kodeck/shared";
 import { useAppStore } from "../store.ts";
 import { sendMessage } from "../hooks/use-websocket.ts";
@@ -112,25 +112,28 @@ export function TabBar() {
           </button>
         </div>
       ))}
-      <div className="flex items-center gap-0.5 ml-1">
-        <Button
-          variant="ghost"
-          size="icon-xs"
+      <div className="mx-1.5 h-5 w-px bg-border" />
+      <div className="flex items-center gap-1">
+        <button
+          type="button"
+          className="flex items-center gap-1 rounded-sm px-1.5 py-0.5 text-xs text-muted-foreground transition-colors hover:text-foreground disabled:opacity-30"
           onClick={() => handleNewSession("chat")}
           disabled={!selectedWorktreePath}
-          title="New chat session"
         >
-          <MessageSquare className="h-3.5 w-3.5" />
-        </Button>
-        <Button
-          variant="ghost"
-          size="icon-xs"
+          <Plus className="h-3 w-3" />
+          <MessageSquare className="h-3 w-3" />
+          <span>Chat</span>
+        </button>
+        <button
+          type="button"
+          className="flex items-center gap-1 rounded-sm px-1.5 py-0.5 text-xs text-muted-foreground transition-colors hover:text-foreground disabled:opacity-30"
           onClick={() => handleNewSession("terminal")}
           disabled={!selectedWorktreePath}
-          title="New terminal session"
         >
-          <TerminalIcon className="h-3.5 w-3.5" />
-        </Button>
+          <Plus className="h-3 w-3" />
+          <TerminalIcon className="h-3 w-3" />
+          <span>Terminal</span>
+        </button>
       </div>
       <div className="ml-auto flex items-center">
         <Button
