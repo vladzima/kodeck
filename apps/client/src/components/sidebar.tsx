@@ -10,6 +10,7 @@ import {
   ArrowDown,
   ArrowUp,
   Trash2,
+  ExternalLink,
 } from "lucide-react";
 import type { ProjectWithWorktrees, WorktreeInfo } from "@kodeck/shared";
 import { useAppStore } from "../store.ts";
@@ -26,9 +27,12 @@ import {
 } from "./ui/dialog.tsx";
 
 function CiStatusDot({ status }: { status?: "pending" | "success" | "failure" }) {
-  if (status === "success") return <span className="text-green-400">●</span>;
-  if (status === "failure") return <span className="text-red-400">●</span>;
-  if (status === "pending") return <span className="text-yellow-400">●</span>;
+  if (status === "success")
+    return <span className="inline-block h-2 w-2 rounded-full border-[1.5px] border-green-400" />;
+  if (status === "failure")
+    return <span className="inline-block h-2 w-2 rounded-full border-[1.5px] border-red-400" />;
+  if (status === "pending")
+    return <span className="inline-block h-2 w-2 rounded-full border-[1.5px] border-yellow-400" />;
   return null;
 }
 
@@ -132,6 +136,19 @@ function WorktreeItem({
           >
             <ArrowUp className="h-4 w-4" />
           </button>
+          {worktree.pr && (
+            <button
+              type="button"
+              className="rounded-sm p-1 text-muted-foreground/60 transition-colors hover:bg-accent hover:text-foreground"
+              onClick={(e) => {
+                e.stopPropagation();
+                window.open(worktree.pr!.url, "_blank");
+              }}
+              title={`PR #${worktree.pr.number}`}
+            >
+              <ExternalLink className="h-4 w-4" />
+            </button>
+          )}
           {!worktree.isMain && (
             <button
               type="button"
@@ -370,7 +387,7 @@ export function Sidebar() {
       </div>
       <div className="border-t border-border" />
       <ScrollArea className="flex-1 px-2 py-2">
-        <div className="flex flex-col gap-2">
+        <div className="flex flex-col gap-4">
           {projects.map((project) => (
             <ProjectItem key={project.id} project={project} />
           ))}
