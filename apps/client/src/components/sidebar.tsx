@@ -359,7 +359,7 @@ export function Sidebar() {
         <span className="text-[10px] uppercase tracking-wider text-foreground">Projects</span>
       </div>
       <ScrollArea className="flex-1 px-2 py-3">
-        <div className="flex flex-col gap-1">
+        <div className="flex flex-col gap-2">
           <button
             type="button"
             className="flex w-full items-center gap-1.5 rounded-md px-2 py-1 text-[11px] font-mono text-muted-foreground/60 transition-colors hover:text-foreground"
@@ -368,7 +368,7 @@ export function Sidebar() {
             <Plus className="h-3 w-3" />
             Add project
           </button>
-          <div className="-mx-2 border-t border-border" />
+          <div className="-mx-4 border-t border-border" />
           {projects.map((project) => (
             <ProjectItem key={project.id} project={project} />
           ))}
