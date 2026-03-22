@@ -77,6 +77,11 @@ export function WorktreeCreateModal() {
       setBranches([]);
       setPRSearchResults([]);
       setScannedCopyPaths([]);
+      // Immediately scan copy paths for the initial source
+      const initialCopyFrom = selectedWorktreePath ?? project?.worktrees[0]?.path ?? "";
+      if (!project?.worktreeCopyPaths && initialCopyFrom) {
+        sendMessage({ type: "worktree.scanCopyPaths", worktreePath: initialCopyFrom });
+      }
     }
     prevOpen.current = open;
   }, [open]);
