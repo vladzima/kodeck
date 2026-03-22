@@ -42,6 +42,7 @@ export function ChatInput({
   const [paletteIndex, setPaletteIndex] = useState(0);
   const [attachments, setAttachments] = useState<ChatAttachment[]>([]);
   const [isDragOver, setIsDragOver] = useState(false);
+  const [isFocused, setIsFocused] = useState(false);
   const textareaRef = useRef<HTMLTextAreaElement>(null);
   const historyIndex = useRef(-1);
   const lastEscapeTime = useRef(0);
@@ -290,6 +291,8 @@ export function ChatInput({
             value={text}
             onChange={(e) => setText(e.target.value)}
             onKeyDown={handleKeyDown}
+            onFocus={() => setIsFocused(true)}
+            onBlur={() => setIsFocused(false)}
             placeholder="Send message"
             rows={1}
             className={`relative z-10 min-h-[36px] flex-1 resize-none overflow-hidden bg-transparent px-3 py-2 text-sm leading-5 placeholder:text-muted-foreground focus:outline-none ${matchedCommand ? "[&::selection]:bg-primary/20" : ""}`}
@@ -311,7 +314,7 @@ export function ChatInput({
               </span>
             </div>
           )}
-          {!text && (
+          {!text && !isFocused && (
             <span className="pointer-events-none mr-2 flex shrink-0 items-center gap-1 text-[10px] text-muted-foreground/50">
               <kbd className="rounded border border-border px-1 py-0.5 font-mono leading-none">
                 ^F

@@ -54,31 +54,31 @@ export async function getWorktreeStatus(
     };
     const status: WorktreePRInfo["status"] = stateMap[data.state] ?? "open";
 
-    // Map CI status
+    // CI and review status only matter for open PRs
     let ciStatus: WorktreePRInfo["ciStatus"];
-    const checks: Array<{ status?: string; conclusion?: string }> = data.statusCheckRollup ?? [];
-    if (checks.length > 0) {
-      const hasFailure = checks.some((c) => c.conclusion === "FAILURE");
-      const hasPending = checks.some((c) => !c.conclusion);
-      if (hasFailure) {
-        ciStatus = "failure";
-      } else if (hasPending) {
-        ciStatus = "pending";
-      } else {
-        // All checks have a conclusion and none failed — treat as success
-        // (covers SUCCESS, NEUTRAL, SKIPPED, STALE, etc.)
-        ciStatus = "success";
-      }
-    }
-
-    // Map review status
     let reviewStatus: WorktreePRInfo["reviewStatus"];
-    if (data.reviewDecision === "APPROVED") {
-      reviewStatus = "approved";
-    } else if (data.reviewDecision === "CHANGES_REQUESTED") {
-      reviewStatus = "changes_requested";
-    } else if (data.reviewDecision) {
-      reviewStatus = "pending";
+
+    if (status === "open") {
+      const checks: Array<{ status?: string; conclusion?: string }> = data.statusCheckRollup ?? [];
+      if (checks.length > 0) {
+        const hasFailure = checks.some((c) => c.conclusion === "FAILURE");
+        const hasPending = checks.some((c) => !c.conclusion);
+        if (hasFailure) {
+          ciStatus = "failure";
+        } else if (hasPending) {
+          ciStatus = "pending";
+        } else {
+          ciStatus = "success";
+        }
+      }
+
+      if (data.reviewDecision === "APPROVED") {
+        reviewStatus = "approved";
+      } else if (data.reviewDecision === "CHANGES_REQUESTED") {
+        reviewStatus = "changes_requested";
+      } else if (data.reviewDecision) {
+        reviewStatus = "pending";
+      }
     }
 
     pr = {
