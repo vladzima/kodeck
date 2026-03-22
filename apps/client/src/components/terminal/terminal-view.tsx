@@ -105,9 +105,10 @@ export const TerminalView = memo(function TerminalView({
 
   return (
     <div
-      ref={containerRef}
-      className="h-full w-full"
+      className="h-full w-full pl-4 pt-2"
       style={{ display: isActive ? "block" : "none" }}
-    />
+    >
+      <div ref={containerRef} className="h-full w-full" />
+    </div>
   );
 });
