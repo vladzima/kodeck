@@ -46,12 +46,12 @@ function SidebarGroup({
     <div>
       <button
         type="button"
-        className="flex w-full cursor-pointer items-center justify-between text-[10px] uppercase tracking-wider text-foreground transition-colors hover:text-foreground/80"
+        className="flex w-full cursor-pointer items-center justify-between text-[11px] uppercase tracking-wider text-foreground transition-colors hover:text-foreground/80"
         onClick={() => setOpen(!open)}
       >
         {title}
         <ChevronDown
-          className={`h-3 w-3 text-muted-foreground/50 transition-transform ${open ? "" : "-rotate-90"}`}
+          className={`h-3.5 w-3.5 text-muted-foreground/50 transition-transform ${open ? "" : "-rotate-90"}`}
         />
       </button>
       {open && <div className="mt-2 flex flex-col gap-3">{children}</div>}
@@ -105,7 +105,7 @@ function ModelSelector({
           {AVAILABLE_MODELS.map((m) => (
             <div
               key={m.id}
-              className={`cursor-pointer rounded-md px-2 py-1.5 text-[11px] ${
+              className={`cursor-pointer rounded-md px-2 py-1.5 text-xs ${
                 m.id === currentModel
                   ? "bg-accent text-accent-foreground"
                   : "text-popover-foreground hover:bg-accent/50"
@@ -159,7 +159,7 @@ function EffortSelector({
         className="flex w-fit cursor-pointer items-center gap-1 border-b border-muted-foreground/60 pb-px text-muted-foreground transition-colors hover:text-foreground"
         onClick={() => setOpen(!open)}
       >
-        <Gauge className="h-3 w-3" />
+        <Gauge className="h-3.5 w-3.5" />
         {EFFORT_LEVELS.find((e) => e.id === current)?.label ?? current}
       </button>
       {open && (
@@ -167,7 +167,7 @@ function EffortSelector({
           {EFFORT_LEVELS.map((e) => (
             <div
               key={e.id}
-              className={`cursor-pointer rounded-md px-2 py-1.5 text-[11px] ${
+              className={`cursor-pointer rounded-md px-2 py-1.5 text-xs ${
                 e.id === current
                   ? "bg-accent text-accent-foreground"
                   : "text-popover-foreground hover:bg-accent/50"
@@ -190,7 +190,7 @@ function EffortSelector({
 function StatRow({ label, children }: { label: string; children: React.ReactNode }) {
   return (
     <div className="flex flex-col gap-0.5">
-      <span className="text-[10px] uppercase tracking-wider text-muted-foreground/40">{label}</span>
+      <span className="text-[11px] uppercase tracking-wider text-muted-foreground/40">{label}</span>
       {children}
     </div>
   );
@@ -233,7 +233,7 @@ export function RightSidebar({
     (meta?.compactions ?? 0) > 0;
 
   return (
-    <div className="flex w-44 shrink-0 flex-col gap-4 border-l border-border px-4 py-4 text-[11px] font-mono text-muted-foreground">
+    <div className="flex w-44 shrink-0 flex-col gap-4 border-l border-border px-4 py-4 text-xs font-mono text-muted-foreground">
       {/* Parameters — interactive settings */}
       <SidebarGroup title="Parameters">
         <StatRow label="Model">
@@ -250,7 +250,7 @@ export function RightSidebar({
             className="flex w-fit cursor-pointer items-center gap-1 border-b border-muted-foreground/60 pb-px text-muted-foreground transition-colors hover:text-foreground"
             onClick={() => onStreamingChange(!streaming)}
           >
-            <Radio className="h-3 w-3" />
+            <Radio className="h-3.5 w-3.5" />
             {streaming ? "live" : "batch"}
           </button>
         </StatRow>
@@ -261,7 +261,7 @@ export function RightSidebar({
             className="flex w-fit cursor-pointer items-center gap-1 border-b border-muted-foreground/60 pb-px text-muted-foreground transition-colors hover:text-foreground"
             onClick={() => onSkipPermissionsChange(!skipPermissions)}
           >
-            <Shield className="h-3 w-3" />
+            <Shield className="h-3.5 w-3.5" />
             {skipPermissions ? "Allow all" : "Restricted"}
           </button>
         </StatRow>

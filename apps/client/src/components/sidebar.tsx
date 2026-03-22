@@ -59,7 +59,7 @@ function WorktreeItem({
   return (
     <button
       type="button"
-      className={`relative flex w-full flex-col gap-0.5 rounded-md px-2 py-1 text-left text-[11px] font-mono transition-colors ${
+      className={`relative flex w-full flex-col gap-0.5 rounded-md px-2 py-1 text-left text-xs font-mono transition-colors ${
         isSelected
           ? "bg-accent text-accent-foreground"
           : "text-muted-foreground hover:bg-accent/50"
@@ -70,10 +70,10 @@ function WorktreeItem({
     >
       {/* Line 1: Branch + sync indicators */}
       <div className="flex w-full items-center gap-1.5">
-        <GitBranch className="h-3 w-3 shrink-0" />
+        <GitBranch className="h-3.5 w-3.5 shrink-0" />
         <span className="min-w-0 flex-1 truncate">{worktree.branch}</span>
         {!hovered && hasAhead && (
-          <span className="flex shrink-0 items-center gap-1 text-[10px]">
+          <span className="flex shrink-0 items-center gap-1 text-[11px]">
             <span className="text-green-400">↑{worktree.ahead}</span>
           </span>
         )}
@@ -81,7 +81,7 @@ function WorktreeItem({
 
       {/* Line 2: PR metadata */}
       {!hovered && hasPr && worktree.pr && (
-        <div className="flex w-full items-center gap-0 pl-[18px] text-[10px] text-muted-foreground/50">
+        <div className="flex w-full items-center gap-0 pl-[20px] text-[11px] text-muted-foreground/50">
           <span>#{worktree.pr.number}</span>
           {worktree.pr.ciStatus && (
             <>
@@ -101,7 +101,7 @@ function WorktreeItem({
       {/* Behind nudge — persistent pulsing indicator when behind > 0 and not hovered */}
       {!hovered && hasBehind && (
         <div className="absolute right-1 top-1/2 -translate-y-1/2">
-          <span className="animate-pulse rounded-full bg-orange-400/15 px-1.5 py-0.5 text-[9px] font-medium text-orange-400">
+          <span className="animate-pulse rounded-full bg-orange-400/15 px-1.5 py-0.5 text-[10px] font-medium text-orange-400">
             pull
           </span>
         </div>
@@ -177,15 +177,15 @@ function ProjectItem({ project }: { project: ProjectWithWorktrees }) {
       <div className="flex w-full items-center gap-0">
         <button
           type="button"
-          className="flex min-w-0 flex-1 items-center gap-1.5 rounded-md px-2 py-1 text-left text-[10px] uppercase tracking-wider text-foreground transition-colors hover:text-foreground/80"
+          className="flex min-w-0 flex-1 items-center gap-1.5 rounded-md px-2 py-1 text-left text-[11px] uppercase tracking-wider text-foreground transition-colors hover:text-foreground/80"
           onClick={() => setExpanded(!expanded)}
         >
           {expanded ? (
-            <ChevronDown className="h-3 w-3 shrink-0 text-muted-foreground/50" />
+            <ChevronDown className="h-3.5 w-3.5 shrink-0 text-muted-foreground/50" />
           ) : (
-            <ChevronRight className="h-3 w-3 shrink-0 text-muted-foreground/50" />
+            <ChevronRight className="h-3.5 w-3.5 shrink-0 text-muted-foreground/50" />
           )}
-          <FolderGit2 className="h-3 w-3 shrink-0" />
+          <FolderGit2 className="h-3.5 w-3.5 shrink-0" />
           <span className="truncate">{project.name}</span>
         </button>
         <button
@@ -198,7 +198,7 @@ function ProjectItem({ project }: { project: ProjectWithWorktrees }) {
           }}
           title="Add worktree"
         >
-          <Plus className="h-3.5 w-3.5" />
+          <Plus className="h-4 w-4" />
         </button>
       </div>
       {expanded && (
@@ -258,7 +258,7 @@ function DebugPanel() {
   return (
     <div className="flex flex-col gap-2">
       <div className="flex items-center justify-between">
-        <span className="text-[10px] uppercase tracking-wider text-muted-foreground/40">
+        <span className="text-[11px] uppercase tracking-wider text-muted-foreground/40">
           Claude Processes ({debugProcesses.length})
         </span>
         <button
@@ -266,17 +266,17 @@ function DebugPanel() {
           className="cursor-pointer text-muted-foreground/50 transition-colors hover:text-foreground"
           onClick={() => sendMessage({ type: "debug.listProcesses" })}
         >
-          <RefreshCw className="h-3 w-3" />
+          <RefreshCw className="h-3.5 w-3.5" />
         </button>
       </div>
       {debugProcesses.length === 0 ? (
-        <span className="text-[10px] text-muted-foreground/30">No active processes</span>
+        <span className="text-[11px] text-muted-foreground/30">No active processes</span>
       ) : (
         <div className="flex flex-col gap-1.5">
           {debugProcesses.map((proc) => (
             <div
               key={proc.pid}
-              className="flex items-center justify-between rounded-md bg-accent/30 px-2 py-1 text-[11px]"
+              className="flex items-center justify-between rounded-md bg-accent/30 px-2 py-1 text-xs"
             >
               <div className="flex flex-col gap-0.5 overflow-hidden">
                 <span className="text-foreground">PID {proc.pid}</span>
@@ -291,7 +291,7 @@ function DebugPanel() {
                 onClick={() => sendMessage({ type: "debug.killProcess", pid: proc.pid })}
                 title="Kill process"
               >
-                <Skull className="h-3 w-3" />
+                <Skull className="h-3.5 w-3.5" />
               </button>
             </div>
           ))}
@@ -354,17 +354,17 @@ export function Sidebar() {
   };
 
   return (
-    <div className="relative flex h-full shrink-0 flex-col border-r border-border bg-sidebar text-[11px] font-mono text-muted-foreground" style={{ width }}>
+    <div className="relative flex h-full shrink-0 flex-col border-r border-border bg-sidebar text-xs font-mono text-muted-foreground" style={{ width }}>
       <div className="flex h-10 items-center border-b border-border px-4">
-        <span className="text-[10px] uppercase tracking-wider text-foreground">Projects</span>
+        <span className="text-[11px] uppercase tracking-wider text-foreground">Projects</span>
       </div>
       <div className="px-2 pt-3 pb-2">
         <button
           type="button"
-          className="flex w-full items-center gap-1.5 rounded-md px-2 py-1 text-[11px] font-mono text-muted-foreground/60 transition-colors hover:text-foreground"
+          className="flex w-full items-center gap-1.5 rounded-md px-2 py-1 text-xs font-mono text-muted-foreground/60 transition-colors hover:text-foreground"
           onClick={handleAddProject}
         >
-          <Plus className="h-3 w-3" />
+          <Plus className="h-3.5 w-3.5" />
           Add project
         </button>
       </div>
