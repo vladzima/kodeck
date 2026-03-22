@@ -55,22 +55,26 @@ export async function getWorktreeStatus(
     const status: WorktreePRInfo["status"] = stateMap[data.state] ?? "open";
 
     // Map CI status
-    let ciStatus: WorktreePRInfo["ciStatus"] = "pending";
+    let ciStatus: WorktreePRInfo["ciStatus"];
     const checks: Array<{ status?: string; conclusion?: string }> = data.statusCheckRollup ?? [];
     if (checks.length > 0) {
       if (checks.some((c) => c.conclusion === "FAILURE")) {
         ciStatus = "failure";
       } else if (checks.every((c) => c.conclusion === "SUCCESS")) {
         ciStatus = "success";
+      } else {
+        ciStatus = "pending";
       }
     }
 
     // Map review status
-    let reviewStatus: WorktreePRInfo["reviewStatus"] = "pending";
+    let reviewStatus: WorktreePRInfo["reviewStatus"];
     if (data.reviewDecision === "APPROVED") {
       reviewStatus = "approved";
     } else if (data.reviewDecision === "CHANGES_REQUESTED") {
       reviewStatus = "changes_requested";
+    } else if (data.reviewDecision) {
+      reviewStatus = "pending";
     }
 
     pr = {
@@ -299,16 +303,14 @@ export async function scanCopyPaths(worktreePath: string): Promise<string[]> {
 
   // Check which paths actually exist
   const existing: string[] = [];
-  await Promise.all(
-    candidates.map(async (candidate) => {
-      try {
-        await stat(join(worktreePath, candidate));
-        existing.push(candidate);
-      } catch {
-        // does not exist
-      }
-    }),
-  );
+  for (const candidate of candidates) {
+    try {
+      await stat(join(worktreePath, candidate));
+      existing.push(candidate);
+    } catch {
+      // does not exist
+    }
+  }
 
   return existing;
 }
@@ -388,6 +390,12 @@ export async function createWorktree(
       cwd: repoPath,
     });
   } else {
+    // Fetch latest before checking out
+    try {
+      await execFile("git", ["fetch"], { cwd: repoPath });
+    } catch {
+      // continue anyway
+    }
     // existing-branch or pr — try checking out existing, fallback to tracking
     const branchName = source.type === "existing-branch" ? source.name : source.branch;
     try {
@@ -420,29 +428,13 @@ export async function removeWorktree(
 // ── Pull worktree ────────────────────────────────────────────────────
 
 export async function pullWorktree(worktreePath: string): Promise<string> {
-  try {
-    const { stdout } = await execFile("git", ["pull", "--ff-only"], { cwd: worktreePath });
-    return stdout;
-  } catch (err) {
-    const message =
-      err instanceof Error
-        ? ((err as Error & { stderr?: string }).stderr ?? err.message)
-        : String(err);
-    return message;
-  }
+  const { stdout } = await execFile("git", ["pull", "--ff-only"], { cwd: worktreePath });
+  return stdout.trim();
 }
 
 // ── Push worktree ────────────────────────────────────────────────────
 
 export async function pushWorktree(worktreePath: string): Promise<string> {
-  try {
-    const { stdout, stderr } = await execFile("git", ["push"], { cwd: worktreePath });
-    return stdout + stderr;
-  } catch (err) {
-    const message =
-      err instanceof Error
-        ? ((err as Error & { stderr?: string }).stderr ?? err.message)
-        : String(err);
-    return message;
-  }
+  const { stdout, stderr } = await execFile("git", ["push"], { cwd: worktreePath });
+  return (stdout + stderr).trim();
 }

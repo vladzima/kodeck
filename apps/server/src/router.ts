@@ -111,20 +111,26 @@ function send(ws: WebSocket, msg: ServerMessage): void {
 
 // ── Worktree status polling ──────────────────────────────────────────
 let statusPollInterval: ReturnType<typeof setInterval> | null = null;
+let pollingInProgress = false;
 
 export function startWorktreeStatusPolling(): void {
   if (statusPollInterval) return;
   statusPollInterval = setInterval(async () => {
     if (connectedClients.size === 0) return;
+    if (pollingInProgress) return;
+    pollingInProgress = true;
     try {
       const config = await loadConfig();
-      for (const project of config.projects) {
-        try {
-          const worktrees = await listWorktrees(project.repoPath, { includeStatus: true });
-          broadcast({ type: "worktree.status", projectId: project.id, worktrees });
-        } catch { /* skip */ }
-      }
+      await Promise.all(
+        config.projects.map(async (project) => {
+          try {
+            const worktrees = await listWorktrees(project.repoPath, { includeStatus: true });
+            broadcast({ type: "worktree.status", projectId: project.id, worktrees });
+          } catch { /* skip */ }
+        }),
+      );
     } catch { /* skip cycle */ }
+    pollingInProgress = false;
   }, 30_000);
 }
 
@@ -202,6 +208,19 @@ async function listClaudeProcesses(): Promise<ClaudeProcessInfo[]> {
       resolve(results);
     });
   });
+}
+
+async function findProjectForWorktree(worktreePath: string): Promise<{ projectId: string; repoPath: string } | null> {
+  const config = await loadConfig();
+  for (const project of config.projects) {
+    try {
+      const wts = await listWorktrees(project.repoPath);
+      if (wts.some((wt) => wt.path === worktreePath)) {
+        return { projectId: project.id, repoPath: project.repoPath };
+      }
+    } catch { /* skip */ }
+  }
+  return null;
 }
 
 function pickFolder(): Promise<string | null> {
@@ -739,6 +758,11 @@ export async function handleMessage(ws: WebSocket, raw: string): Promise<void> {
       }
 
       case "worktree.pull": {
+        const pullProject = await findProjectForWorktree(msg.worktreePath);
+        if (!pullProject) {
+          send(ws, { type: "error", message: "Worktree not found in any project", requestType: msg.type });
+          break;
+        }
         try {
           const result = await pullWorktree(msg.worktreePath);
           broadcast({ type: "worktree.operationResult", operation: "pull", success: true, message: result });
@@ -749,21 +773,20 @@ export async function handleMessage(ws: WebSocket, raw: string): Promise<void> {
         // Refresh project list after pull
         const pullProjects = await getProjects();
         broadcast({ type: "project.list", projects: pullProjects });
-        // Refresh worktree status for all projects that contain this path
+        // Refresh worktree status
         try {
-          const pullConfig = await loadConfig();
-          for (const proj of pullConfig.projects) {
-            const wts = await listWorktrees(proj.repoPath);
-            if (wts.some((wt) => wt.path === msg.worktreePath)) {
-              const enriched = await listWorktrees(proj.repoPath, { includeStatus: true });
-              broadcast({ type: "worktree.status", projectId: proj.id, worktrees: enriched });
-            }
-          }
+          const enriched = await listWorktrees(pullProject.repoPath, { includeStatus: true });
+          broadcast({ type: "worktree.status", projectId: pullProject.projectId, worktrees: enriched });
         } catch { /* skip */ }
         break;
       }
 
       case "worktree.push": {
+        const pushProject = await findProjectForWorktree(msg.worktreePath);
+        if (!pushProject) {
+          send(ws, { type: "error", message: "Worktree not found in any project", requestType: msg.type });
+          break;
+        }
         try {
           const result = await pushWorktree(msg.worktreePath);
           broadcast({ type: "worktree.operationResult", operation: "push", success: true, message: result });
@@ -774,16 +797,10 @@ export async function handleMessage(ws: WebSocket, raw: string): Promise<void> {
         // Refresh project list after push
         const pushProjects = await getProjects();
         broadcast({ type: "project.list", projects: pushProjects });
-        // Refresh worktree status for all projects that contain this path
+        // Refresh worktree status
         try {
-          const pushConfig = await loadConfig();
-          for (const proj of pushConfig.projects) {
-            const wts = await listWorktrees(proj.repoPath);
-            if (wts.some((wt) => wt.path === msg.worktreePath)) {
-              const enriched = await listWorktrees(proj.repoPath, { includeStatus: true });
-              broadcast({ type: "worktree.status", projectId: proj.id, worktrees: enriched });
-            }
-          }
+          const enriched = await listWorktrees(pushProject.repoPath, { includeStatus: true });
+          broadcast({ type: "worktree.status", projectId: pushProject.projectId, worktrees: enriched });
         } catch { /* skip */ }
         break;
       }
@@ -813,6 +830,11 @@ export async function handleMessage(ws: WebSocket, raw: string): Promise<void> {
       }
 
       case "worktree.scanCopyPaths": {
+        const scanProject = await findProjectForWorktree(msg.worktreePath);
+        if (!scanProject) {
+          send(ws, { type: "error", message: "Worktree not found in any project", requestType: msg.type });
+          break;
+        }
         const paths = await scanCopyPaths(msg.worktreePath);
         send(ws, { type: "worktree.copyPaths", worktreePath: msg.worktreePath, paths });
         break;
@@ -920,6 +942,7 @@ export async function handleMessage(ws: WebSocket, raw: string): Promise<void> {
 
 /** Kill all live processes and clear the sessions map (server shutdown). */
 export function cleanupAllSessions(): void {
+  stopWorktreeStatusPolling();
   for (const [id, session] of sessions) {
     session.close();
     sessions.delete(id);
