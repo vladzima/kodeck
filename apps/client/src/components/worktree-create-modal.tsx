@@ -64,7 +64,6 @@ export function WorktreeCreateModal() {
     if (isNewOpen) {
       // Look up the fresh project from the store at call time
       const freshProject = useAppStore.getState().projects.find((p) => p.id === projectId);
-      const freshSelectedPath = useAppStore.getState().selectedWorktreePath;
 
       setActiveTab("new-branch");
       setBranchName("");
@@ -73,7 +72,9 @@ export function WorktreeCreateModal() {
       setSelectedPR(null);
       setBranchFilter("");
       setPrQuery("");
-      const initialCopyFrom = freshSelectedPath ?? freshProject?.worktrees[0]?.path ?? "";
+      // Default copy source: the main worktree of the target project (not the globally selected one)
+      const mainWorktree = freshProject?.worktrees.find((w) => w.isMain) ?? freshProject?.worktrees[0];
+      const initialCopyFrom = mainWorktree?.path ?? "";
       setCopyFromPath(initialCopyFrom);
       setCopyPaths(freshProject?.worktreeCopyPaths ?? []);
       setSaveCopyConfig(false);
