@@ -6,6 +6,8 @@ export const DEFAULT_MODEL = "claude-sonnet-4-6";
 
 export type SessionType = "chat" | "terminal";
 
+export type EffortLevel = "low" | "medium" | "high" | "max" | "auto";
+
 export interface SessionInfo {
   id: string;
   type: SessionType;
@@ -14,6 +16,7 @@ export interface SessionInfo {
   createdAt: number;
   claudeSessionId?: string;
   model?: string;
+  effort?: EffortLevel;
   skipPermissions?: boolean;
   streaming?: boolean;
 }
@@ -26,12 +29,25 @@ export interface ProjectConfig {
   id: string;
   name: string;
   repoPath: string;
+  worktreeCopyPaths?: string[];
+}
+
+export interface WorktreePRInfo {
+  number: number;
+  title: string;
+  url: string;
+  status: "open" | "closed" | "merged";
+  ciStatus?: "pending" | "success" | "failure";
+  reviewStatus?: "pending" | "approved" | "changes_requested";
 }
 
 export interface WorktreeInfo {
   path: string;
   branch: string;
   isMain: boolean;
+  ahead: number;
+  behind: number;
+  pr?: WorktreePRInfo;
 }
 
 export interface ProjectWithWorktrees extends ProjectConfig {
@@ -44,10 +60,20 @@ export interface ProjectWithWorktrees extends ProjectConfig {
 
 export type ChatMessageRole = "user" | "assistant";
 
+export interface ChatAttachment {
+  /** Original file name */
+  filename: string;
+  /** MIME type (e.g. "image/png", "text/markdown") */
+  mediaType: string;
+  /** Base64-encoded file content */
+  data: string;
+}
+
 export interface ChatUserMessage {
   role: "user";
   content: string;
   timestamp: number;
+  attachments?: ChatAttachment[];
 }
 
 export interface ToolCallInfo {
@@ -124,6 +150,7 @@ export interface ChatSendMessage {
   type: "chat.send";
   sessionId: string;
   text: string;
+  attachments?: ChatAttachment[];
 }
 
 export interface ChatInterruptMessage {
@@ -149,6 +176,12 @@ export interface ChatSkipPermissionsMessage {
   type: "chat.skipPermissions";
   sessionId: string;
   skip: boolean;
+}
+
+export interface ChatEffortMessage {
+  type: "chat.effort";
+  sessionId: string;
+  effort: EffortLevel;
 }
 
 export interface ChatStreamingMessage {
@@ -184,13 +217,44 @@ export interface ProjectRemoveMessage {
 export interface WorktreeCreateMessage {
   type: "worktree.create";
   projectId: string;
-  branch: string;
-  path?: string;
+  source:
+    | { type: "new-branch"; name: string; base: string }
+    | { type: "existing-branch"; name: string }
+    | { type: "pr"; number: number };
+  copyFromPath: string;
+  copyPaths: string[];
+  saveCopyConfig: boolean;
 }
 
 export interface WorktreeRemoveMessage {
   type: "worktree.remove";
   projectId: string;
+  worktreePath: string;
+}
+
+export interface WorktreePullMessage {
+  type: "worktree.pull";
+  worktreePath: string;
+}
+
+export interface WorktreePushMessage {
+  type: "worktree.push";
+  worktreePath: string;
+}
+
+export interface WorktreeListBranchesMessage {
+  type: "worktree.listBranches";
+  projectId: string;
+}
+
+export interface WorktreeSearchPRsMessage {
+  type: "worktree.searchPRs";
+  projectId: string;
+  query: string;
+}
+
+export interface WorktreeScanCopyPathsMessage {
+  type: "worktree.scanCopyPaths";
   worktreePath: string;
 }
 
@@ -223,6 +287,7 @@ export type ClientMessage =
   | ChatPermissionMessage
   | ChatModelMessage
   | ChatSkipPermissionsMessage
+  | ChatEffortMessage
   | ChatStreamingMessage
   | TerminalInputMessage
   | TerminalResizeMessage
@@ -230,6 +295,11 @@ export type ClientMessage =
   | ProjectRemoveMessage
   | WorktreeCreateMessage
   | WorktreeRemoveMessage
+  | WorktreePullMessage
+  | WorktreePushMessage
+  | WorktreeListBranchesMessage
+  | WorktreeSearchPRsMessage
+  | WorktreeScanCopyPathsMessage
   | ProjectListMessage
   | DialogPickFolderMessage
   | SessionListMessage
@@ -337,6 +407,8 @@ export interface SessionListEvent {
   chatHistories: Record<string, ChatMessage[]>;
   slashCommands: Record<string, string[]>;
   sessionMetas: Record<string, SessionMeta>;
+  sessionStates?: Record<string, ChatSessionState>;
+  pendingPermissions?: Record<string, PermissionRequest>;
 }
 
 export interface ChatSlashCommandsEvent {
@@ -369,6 +441,51 @@ export interface ServerErrorEvent {
   requestType?: string;
 }
 
+export interface BranchInfo {
+  name: string;
+  lastCommitDate: string;
+  author: string;
+}
+
+export interface PRSearchResult {
+  number: number;
+  title: string;
+  author: string;
+  headBranch: string;
+  status: "open" | "closed" | "merged";
+}
+
+export interface WorktreeStatusEvent {
+  type: "worktree.status";
+  projectId: string;
+  worktrees: WorktreeInfo[];
+}
+
+export interface WorktreeBranchListEvent {
+  type: "worktree.branchList";
+  projectId: string;
+  branches: BranchInfo[];
+}
+
+export interface WorktreePRListEvent {
+  type: "worktree.prList";
+  projectId: string;
+  prs: PRSearchResult[];
+}
+
+export interface WorktreeCopyPathsEvent {
+  type: "worktree.copyPaths";
+  worktreePath: string;
+  paths: string[];
+}
+
+export interface WorktreeOperationResultEvent {
+  type: "worktree.operationResult";
+  operation: "pull" | "push" | "create" | "remove";
+  success: boolean;
+  message?: string;
+}
+
 export type ServerMessage =
   | SessionCreatedEvent
   | SessionClosedEvent
@@ -389,4 +506,9 @@ export type ServerMessage =
   | SessionMetaEvent
   | SessionListEvent
   | DebugProcessListEvent
-  | ServerErrorEvent;
+  | ServerErrorEvent
+  | WorktreeStatusEvent
+  | WorktreeBranchListEvent
+  | WorktreePRListEvent
+  | WorktreeCopyPathsEvent
+  | WorktreeOperationResultEvent;
