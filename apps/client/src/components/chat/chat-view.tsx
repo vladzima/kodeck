@@ -4,6 +4,7 @@ import { sendMessage } from "../../hooks/use-websocket.ts";
 import { MessageList } from "./message-list.tsx";
 import { ChatInput } from "./chat-input.tsx";
 import { PermissionPrompt } from "./permission-prompt.tsx";
+import { RightSidebar } from "./right-sidebar.tsx";
 
 const EMPTY_COMMANDS: string[] = [];
 
@@ -18,12 +19,22 @@ export function ChatView({ sessionId }: { sessionId: string }) {
   const setSessionStreaming = useAppStore((s) => s.setSessionStreaming);
   const pendingPermission = useAppStore((s) => s.pendingPermission.get(sessionId));
   const clearPendingPermission = useAppStore((s) => s.clearPendingPermission);
+  const cleanedAtIndex = useAppStore((s) => s.cleanedAtIndex.get(sessionId));
+  const cleanChat = useAppStore((s) => s.cleanChat);
+  const restoreChat = useAppStore((s) => s.restoreChat);
 
-  const messages = chatData?.messages ?? [];
+  const allMessages = chatData?.messages ?? [];
   const state = chatData?.state ?? "idle";
   const inputHistory = chatData?.inputHistory ?? [];
 
-  const lastMessage = messages[messages.length - 1];
+  const isCleaned = cleanedAtIndex != null && cleanedAtIndex < allMessages.length;
+  const messages = isCleaned ? allMessages.slice(cleanedAtIndex) : allMessages;
+
+  const userTurns = allMessages.filter((m) => m.role === "user").length;
+  const assistantTurns = allMessages.filter((m) => m.role === "assistant").length;
+  const visibleMessages = isCleaned ? messages.length : undefined;
+
+  const lastMessage = allMessages[allMessages.length - 1];
   const isThinking =
     state === "streaming" &&
     !(lastMessage?.role === "assistant" && lastMessage.isStreaming);
@@ -79,21 +90,38 @@ export function ChatView({ sessionId }: { sessionId: string }) {
   ) : null;
 
   return (
-    <div className="flex h-full flex-col">
-      <MessageList messages={messages} isThinking={isThinking} permissionPrompt={permissionPrompt} />
-      <ChatInput
-        onSend={handleSend}
-        onInterrupt={handleInterrupt}
-        onModelChange={handleModelChange}
-        onSkipPermissionsChange={handleSkipPermissionsChange}
-        onStreamingChange={handleStreamingChange}
-        state={state}
-        inputHistory={inputHistory}
-        slashCommands={slashCommands}
+    <div className="flex h-full">
+      <div className="flex flex-1 flex-col overflow-hidden">
+        <MessageList
+          messages={messages}
+          isThinking={isThinking}
+          permissionPrompt={permissionPrompt}
+          isCleaned={isCleaned}
+          onRestore={() => restoreChat(sessionId)}
+          slashCommands={slashCommands}
+        />
+        <ChatInput
+          onSend={handleSend}
+          onInterrupt={handleInterrupt}
+          onCleanChat={() => cleanChat(sessionId)}
+          state={state}
+          inputHistory={inputHistory}
+          slashCommands={slashCommands}
+          canClean={allMessages.length > 1}
+        />
+      </div>
+      <RightSidebar
         meta={meta}
+        state={state}
         model={session?.model ?? DEFAULT_MODEL}
-        skipPermissions={session?.skipPermissions ?? false}
         streaming={session?.streaming ?? false}
+        skipPermissions={session?.skipPermissions ?? false}
+        userTurns={userTurns}
+        assistantTurns={assistantTurns}
+        visibleMessages={visibleMessages}
+        onModelChange={handleModelChange}
+        onStreamingChange={handleStreamingChange}
+        onSkipPermissionsChange={handleSkipPermissionsChange}
       />
     </div>
   );

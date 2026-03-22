@@ -63,6 +63,11 @@ interface AppState {
   pendingPermission: Map<string, PermissionRequest>;
   setPendingPermission: (sessionId: string, permission: PermissionRequest) => void;
   clearPendingPermission: (sessionId: string) => void;
+
+  // Chat cleanup (visual only)
+  cleanedAtIndex: Map<string, number>;
+  cleanChat: (sessionId: string) => void;
+  restoreChat: (sessionId: string) => void;
 }
 
 function getOrCreateChatData(chatData: Map<string, ChatSessionData>, sessionId: string): ChatSessionData {
@@ -88,9 +93,11 @@ export const useAppStore = create<AppState>((set) => ({
   sessions: [],
   activeSessionId: null,
   addSession: (session) =>
-    set((state) => ({
-      sessions: [...state.sessions, session],
-    })),
+    set((state) => {
+      // Prevent duplicates
+      if (state.sessions.some((s) => s.id === session.id)) return state;
+      return { sessions: [...state.sessions, session] };
+    }),
   removeSession: (sessionId) =>
     set((state) => {
       const idx = state.sessions.findIndex((s) => s.id === sessionId);
@@ -331,5 +338,22 @@ export const useAppStore = create<AppState>((set) => ({
       const pendingPermission = new Map(state.pendingPermission);
       pendingPermission.delete(sessionId);
       return { pendingPermission };
+    }),
+
+  // Chat cleanup (visual only)
+  cleanedAtIndex: new Map(),
+  cleanChat: (sessionId) =>
+    set((state) => {
+      const data = state.chatData.get(sessionId);
+      if (!data || data.messages.length <= 1) return state;
+      const cleanedAtIndex = new Map(state.cleanedAtIndex);
+      cleanedAtIndex.set(sessionId, data.messages.length - 1);
+      return { cleanedAtIndex };
+    }),
+  restoreChat: (sessionId) =>
+    set((state) => {
+      const cleanedAtIndex = new Map(state.cleanedAtIndex);
+      cleanedAtIndex.delete(sessionId);
+      return { cleanedAtIndex };
     }),
 }));

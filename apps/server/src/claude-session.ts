@@ -33,6 +33,8 @@ export class ClaudeSession extends EventEmitter<ClaudeSessionEvents> {
   private streaming = false; // true = use stream_event deltas, false = use assistant events
   private readyResolve: (() => void) | null = null;
   private ready: Promise<void>;
+  private lastUserMessageWasCompact = false;
+  private userHasSentMessage = false; // suppress replayed events on resume
   claudeSessionId: string | null = null;
 
   constructor() {
@@ -42,6 +44,11 @@ export class ClaudeSession extends EventEmitter<ClaudeSessionEvents> {
 
   get state(): ChatSessionState {
     return this._state;
+  }
+
+  /** Restore cumulative meta values (e.g. compactions) from persisted state. */
+  restoreMeta(meta: SessionMeta): void {
+    if (meta.compactions) this._meta.compactions = meta.compactions;
   }
 
   private setState(state: ChatSessionState): void {
@@ -139,6 +146,7 @@ export class ClaudeSession extends EventEmitter<ClaudeSessionEvents> {
 
       case "stream_event": {
         // Token-level streaming (only when --include-partial-messages is used)
+        if (!this.userHasSentMessage) break; // suppress replayed events on resume
         const inner = event.event;
         if (!inner) break;
 
@@ -155,6 +163,7 @@ export class ClaudeSession extends EventEmitter<ClaudeSessionEvents> {
       }
 
       case "assistant": {
+        if (!this.userHasSentMessage) break; // suppress replayed events on resume
         this.setState("streaming");
 
         const content = event.message?.content;
@@ -201,6 +210,7 @@ export class ClaudeSession extends EventEmitter<ClaudeSessionEvents> {
       }
 
       case "user": {
+        if (!this.userHasSentMessage) break; // suppress replayed events on resume
         const content = event.message?.content;
         if (!Array.isArray(content)) break;
 
@@ -222,6 +232,18 @@ export class ClaudeSession extends EventEmitter<ClaudeSessionEvents> {
       }
 
       case "result": {
+        if (!this.userHasSentMessage) break; // suppress replayed result on resume
+        // Log result event keys for debugging (temporary)
+        if (this.lastUserMessageWasCompact) {
+          console.log("[compact] result event keys:", Object.keys(event), JSON.stringify(event).slice(0, 500));
+        }
+        // If the result event carries a text summary (e.g. compaction), emit it as assistant text
+        if (event.result && typeof event.result === "string") {
+          this.emit("text", event.result, this.currentMessageId);
+        } else if (this.lastUserMessageWasCompact) {
+          // Compaction doesn't produce assistant text — synthesize a confirmation
+          this.emit("text", "Conversation compacted.", this.currentMessageId);
+        }
         this.setState("idle");
         this.activeToolCalls.clear();
         this.emit("end", this.currentMessageId);
@@ -249,6 +271,10 @@ export class ClaudeSession extends EventEmitter<ClaudeSessionEvents> {
         }
         if (event.total_cost_usd != null) {
           this._meta.costUsd = event.total_cost_usd;
+        }
+        if (this.lastUserMessageWasCompact) {
+          this._meta.compactions = (this._meta.compactions ?? 0) + 1;
+          this.lastUserMessageWasCompact = false;
         }
         this._meta.activeShells = 0;
         this._meta.activeAgents = 0;
@@ -298,6 +324,8 @@ export class ClaudeSession extends EventEmitter<ClaudeSessionEvents> {
     }
 
     this.currentMessageId = randomUUID();
+    this.userHasSentMessage = true;
+    this.lastUserMessageWasCompact = text.trim().toLowerCase() === "/compact";
     this.setState("streaming");
 
     const payload = JSON.stringify({
@@ -376,6 +404,7 @@ interface ClaudeStreamEvent {
   permissionMode?: string;
   contextWindow?: number;
   event?: StreamEventInner;
+  result?: string;
   modelUsage?: Record<string, {
     inputTokens?: number;
     outputTokens?: number;

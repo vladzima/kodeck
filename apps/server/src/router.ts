@@ -17,6 +17,7 @@ import {
   removeWorktree,
 } from "./projects.ts";
 import { loadConfig } from "./config.ts";
+import type { SessionMeta } from "@kodeck/shared";
 import {
   loadPersistedSessions,
   persistSession,
@@ -62,6 +63,7 @@ type Session = ClaudeSession | TerminalSession;
 const sessions = new Map<string, Session>();
 const sessionMessages = new Map<string, ChatMessage[]>();
 const sessionInfos = new Map<string, SessionInfo>();
+const sessionMetas = new Map<string, SessionMeta>();
 
 function pickFolder(): Promise<string | null> {
   return new Promise((resolve, reject) => {
@@ -186,6 +188,7 @@ function wireClaudeSession(ws: WebSocket, sessionId: string, session: ClaudeSess
     updateSessionSlashCommands(sessionId, commands).catch(console.error);
   });
   session.on("meta", (meta) => {
+    sessionMetas.set(sessionId, meta);
     send(ws, { type: "session.meta", sessionId, meta });
     updateSessionMeta(sessionId, meta).catch(console.error);
     // Persist claudeSessionId for resume
@@ -201,9 +204,9 @@ function wireClaudeSession(ws: WebSocket, sessionId: string, session: ClaudeSess
     send(ws, { type: "chat.error", sessionId, error });
   });
   session.on("exit", () => {
-    sessions.delete(sessionId);
-    // Don't send session.closed — the session info remains in sessionInfos
-    // so it can be lazy-respawned on next message. Just reset state to idle.
+    // Don't delete from sessions map — keep the entry so session.close can still
+    // kill the process if the user closes the tab. Lazy respawn will replace it.
+    // Just reset state to idle so the UI knows Claude stopped.
     send(ws, { type: "chat.state", sessionId, state: "idle" });
   });
 }
@@ -231,6 +234,8 @@ function respawnSession(ws: WebSocket, sessionId: string): void {
   }
 
   const claude = new ClaudeSession();
+  const cachedMeta = sessionMetas.get(sessionId);
+  if (cachedMeta) claude.restoreMeta(cachedMeta);
   sessions.set(sessionId, claude);
   wireClaudeSession(ws, sessionId, claude);
   claude.spawn(info.worktreePath, {
@@ -319,6 +324,7 @@ export async function handleMessage(ws: WebSocket, raw: string): Promise<void> {
         // Clean up persistence for chat sessions
         sessionInfos.delete(msg.sessionId);
         sessionMessages.delete(msg.sessionId);
+        sessionMetas.delete(msg.sessionId);
         removePersistedSession(msg.sessionId).catch(console.error);
         send(ws, { type: "session.closed", sessionId: msg.sessionId });
         break;
@@ -330,6 +336,9 @@ export async function handleMessage(ws: WebSocket, raw: string): Promise<void> {
           // Lazy spawn for restored session — resume Claude's own session
           const info = sessionInfos.get(msg.sessionId)!;
           const claude = new ClaudeSession();
+          // Restore cumulative meta (compactions etc.) from cached or persisted state
+          const cachedMeta = sessionMetas.get(msg.sessionId);
+          if (cachedMeta) claude.restoreMeta(cachedMeta);
           sessions.set(msg.sessionId, claude);
           wireClaudeSession(ws, msg.sessionId, claude);
           claude.spawn(info.worktreePath, {
@@ -488,6 +497,7 @@ export async function handleMessage(ws: WebSocket, raw: string): Promise<void> {
           // Register in memory maps so lazy spawn works
           sessionInfos.set(p.info.id, p.info);
           sessionMessages.set(p.info.id, [...p.messages]);
+          if (p.meta) sessionMetas.set(p.info.id, p.meta);
         }
 
         send(ws, { type: "session.list", sessions: restoredSessions, chatHistories, slashCommands, sessionMetas });

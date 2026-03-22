@@ -3,7 +3,7 @@ import spinners from "cli-spinners";
 
 const spinner = spinners.dots;
 
-export function ThinkingIndicator() {
+export function ThinkingIndicator({ label }: { label?: string }) {
   const [frame, setFrame] = useState(0);
   const [elapsed, setElapsed] = useState(0);
   const startTime = useRef(Date.now());
@@ -32,7 +32,11 @@ export function ThinkingIndicator() {
       <span className="inline-block w-4 text-center font-mono">
         {spinner.frames[frame]}
       </span>
-      <span className="tabular-nums">{seconds}s</span>
+      {label ? (
+        <span>{label}</span>
+      ) : (
+        <span className="tabular-nums">{seconds}s</span>
+      )}
     </div>
   );
 }

@@ -89,6 +89,7 @@ export interface SessionMeta {
   costUsd?: number;
   activeShells?: number;
   activeAgents?: number;
+  compactions?: number;
 }
 
 // ============================================
