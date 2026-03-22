@@ -3,10 +3,12 @@ import { sendMessage } from "../../hooks/use-websocket.ts";
 import { MessageList } from "./message-list.tsx";
 import { ChatInput } from "./chat-input.tsx";
 
+const EMPTY_COMMANDS: string[] = [];
+
 export function ChatView({ sessionId }: { sessionId: string }) {
   const chatData = useAppStore((s) => s.chatData.get(sessionId));
   const addUserMessage = useAppStore((s) => s.addUserMessage);
-  const slashCommands = useAppStore((s) => s.slashCommands.get(sessionId) ?? []);
+  const slashCommands = useAppStore((s) => s.slashCommands.get(sessionId)) ?? EMPTY_COMMANDS;
 
   const messages = chatData?.messages ?? [];
   const state = chatData?.state ?? "idle";
