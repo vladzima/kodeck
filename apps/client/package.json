@@ -11,6 +11,7 @@
   "dependencies": {
     "@fontsource-variable/geist": "^5.2.8",
     "@fontsource-variable/space-grotesk": "^5.2.10",
+    "@fontsource/google-sans": "^5.2.1",
     "@kodeck/shared": "workspace:*",
     "@streamdown/code": "^1.1.1",
     "@tailwindcss/vite": "catalog:",
