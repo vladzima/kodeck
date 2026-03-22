@@ -92,7 +92,9 @@ export const useAppStore = create<AppState>((set) => ({
         });
       }
       const activeSessionId = state.activeSessionId ?? sessions[0]?.id ?? null;
-      return { sessions, chatData, activeSessionId };
+      const activeSession = sessions.find((s) => s.id === activeSessionId);
+      const selectedWorktreePath = state.selectedWorktreePath ?? activeSession?.worktreePath ?? null;
+      return { sessions, chatData, activeSessionId, selectedWorktreePath };
     }),
 
   // Chat data
