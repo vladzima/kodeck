@@ -1,4 +1,4 @@
-import { useState, useEffect } from "react";
+import { useState, useEffect, useRef, useCallback } from "react";
 import {
   ChevronRight,
   ChevronDown,
@@ -301,16 +301,60 @@ function DebugPanel() {
   );
 }
 
+const MIN_WIDTH = 180;
+const MAX_WIDTH = 480;
+const DEFAULT_WIDTH = 240;
+const STORAGE_KEY = "kodeck-sidebar-width";
+
 export function Sidebar() {
   const { projects } = useAppStore();
   const debugMode = useAppStore((s) => s.debugMode);
+  const [width, setWidth] = useState(() => {
+    const stored = localStorage.getItem(STORAGE_KEY);
+    return stored ? Math.max(MIN_WIDTH, Math.min(MAX_WIDTH, Number(stored))) : DEFAULT_WIDTH;
+  });
+  const dragging = useRef(false);
+  const startX = useRef(0);
+  const startWidth = useRef(0);
+
+  const onMouseMove = useCallback((e: MouseEvent) => {
+    if (!dragging.current) return;
+    const delta = e.clientX - startX.current;
+    const newWidth = Math.max(MIN_WIDTH, Math.min(MAX_WIDTH, startWidth.current + delta));
+    setWidth(newWidth);
+  }, []);
+
+  const onMouseUp = useCallback(() => {
+    dragging.current = false;
+    document.body.style.cursor = "";
+    document.body.style.userSelect = "";
+    localStorage.setItem(STORAGE_KEY, String(width));
+  }, [width]);
+
+  useEffect(() => {
+    document.addEventListener("mousemove", onMouseMove);
+    document.addEventListener("mouseup", onMouseUp);
+    return () => {
+      document.removeEventListener("mousemove", onMouseMove);
+      document.removeEventListener("mouseup", onMouseUp);
+    };
+  }, [onMouseMove, onMouseUp]);
+
+  const handleDragStart = (e: React.MouseEvent) => {
+    e.preventDefault();
+    dragging.current = true;
+    startX.current = e.clientX;
+    startWidth.current = width;
+    document.body.style.cursor = "col-resize";
+    document.body.style.userSelect = "none";
+  };
 
   const handleAddProject = () => {
     sendMessage({ type: "dialog.pickFolder" });
   };
 
   return (
-    <div className="flex h-full w-60 flex-col border-r border-border bg-sidebar">
+    <div className="relative flex h-full shrink-0 flex-col border-r border-border bg-sidebar" style={{ width }}>
       <div className="flex h-10 items-center justify-between border-b border-sidebar-border px-3">
         <span className="text-sm font-semibold text-sidebar-foreground">Projects</span>
       </div>
@@ -337,6 +381,11 @@ export function Sidebar() {
           Add project
         </Button>
       </div>
+      {/* Resize handle */}
+      <div
+        className="absolute right-0 top-0 z-10 h-full w-1 cursor-col-resize hover:bg-primary/30 active:bg-primary/50"
+        onMouseDown={handleDragStart}
+      />
     </div>
   );
 }
