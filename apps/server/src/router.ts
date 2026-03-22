@@ -123,6 +123,9 @@ function wireClaudeSession(ws: WebSocket, sessionId: string, session: ClaudeSess
     }
     updateSessionMessages(sessionId, messages).catch(console.error);
   });
+  session.on("slash_commands", (commands) => {
+    send(ws, { type: "chat.slash_commands", sessionId, commands });
+  });
   session.on("error", (error) => {
     send(ws, { type: "chat.error", sessionId, error });
   });

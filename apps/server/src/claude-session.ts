@@ -18,6 +18,7 @@ interface ClaudeSessionEvents {
   end: [messageId: string];
   error: [error: string];
   exit: [code: number | null];
+  slash_commands: [commands: string[]];
 }
 
 export class ClaudeSession extends EventEmitter<ClaudeSessionEvents> {
@@ -77,7 +78,9 @@ export class ClaudeSession extends EventEmitter<ClaudeSessionEvents> {
 
     switch (event.type) {
       case "system":
-        // System init events — ignore
+        if (event.subtype === "init" && Array.isArray(event.slash_commands)) {
+          this.emit("slash_commands", event.slash_commands);
+        }
         break;
 
       case "assistant": {
@@ -169,6 +172,8 @@ export class ClaudeSession extends EventEmitter<ClaudeSessionEvents> {
 // Types for Claude stream-json events
 interface ClaudeStreamEvent {
   type: "system" | "assistant" | "user" | "result" | "rate_limit_event";
+  subtype?: "init" | string;
+  slash_commands?: string[];
   message?: {
     content: ClaudeContentBlock[];
   };

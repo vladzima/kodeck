@@ -44,6 +44,10 @@ interface AppState {
   addUserMessage: (sessionId: string, text: string) => void;
   setChatState: (sessionId: string, state: ChatSessionState) => void;
   finishAssistantMessage: (sessionId: string, messageId: string) => void;
+
+  // Slash commands
+  slashCommands: Map<string, string[]>;
+  setSlashCommands: (sessionId: string, commands: string[]) => void;
 }
 
 function getOrCreateChatData(chatData: Map<string, ChatSessionData>, sessionId: string): ChatSessionData {
@@ -195,5 +199,14 @@ export const useAppStore = create<AppState>((set) => ({
 
       chatData.set(sessionId, { ...data, messages });
       return { chatData };
+    }),
+
+  // Slash commands
+  slashCommands: new Map(),
+  setSlashCommands: (sessionId, commands) =>
+    set((state) => {
+      const slashCommands = new Map(state.slashCommands);
+      slashCommands.set(sessionId, commands);
+      return { slashCommands };
     }),
 }));

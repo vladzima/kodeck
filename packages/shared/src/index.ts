@@ -269,6 +269,12 @@ export interface SessionListEvent {
   chatHistories: Record<string, ChatMessage[]>;
 }
 
+export interface ChatSlashCommandsEvent {
+  type: "chat.slash_commands";
+  sessionId: string;
+  commands: string[];
+}
+
 export interface ServerErrorEvent {
   type: "error";
   message: string;
@@ -290,5 +296,6 @@ export type ServerMessage =
   | TerminalExitEvent
   | ProjectListEvent
   | DialogFolderPickedEvent
+  | ChatSlashCommandsEvent
   | SessionListEvent
   | ServerErrorEvent;

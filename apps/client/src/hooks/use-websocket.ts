@@ -53,6 +53,10 @@ function handleServerMessage(msg: ServerMessage): void {
       state.finishAssistantMessage(msg.sessionId, msg.messageId);
       break;
 
+    case "chat.slash_commands":
+      state.setSlashCommands(msg.sessionId, msg.commands);
+      break;
+
     case "terminal.output":
       window.dispatchEvent(
         new CustomEvent("kodeck:terminal-output", {
