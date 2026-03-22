@@ -4,6 +4,7 @@ import { Sidebar } from "./components/sidebar.tsx";
 import { TabBar } from "./components/tab-bar.tsx";
 import { MainPanel } from "./components/main-panel.tsx";
 import { WorktreeCreateModal } from "./components/worktree-create-modal.tsx";
+import { Notifications } from "./components/notifications.tsx";
 
 export function App() {
   useWebSocket();
@@ -24,6 +25,7 @@ export function App() {
         )}
       </div>
       <WorktreeCreateModal />
+      <Notifications />
     </div>
   );
 }

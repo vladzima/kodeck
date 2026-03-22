@@ -15,6 +15,17 @@ import { ScrollArea } from "./ui/scroll-area.tsx";
 
 type TabId = "new-branch" | "existing-branch" | "pr";
 
+function isValidBranchName(name: string): boolean {
+  if (!name.trim()) return true; // Empty is fine (button is disabled)
+  if (/[\s~^:?*[\]\\]/.test(name)) return false;
+  if (name.includes("..")) return false;
+  if (name.includes("@{")) return false;
+  if (name.startsWith(".") || name.endsWith(".")) return false;
+  if (name.startsWith("/") || name.endsWith("/")) return false;
+  if (name.endsWith(".lock")) return false;
+  return true;
+}
+
 export function WorktreeCreateModal() {
   const open = useAppStore((s) => s.worktreeCreateModalOpen);
   const projectId = useAppStore((s) => s.worktreeCreateProjectId);
@@ -22,8 +33,13 @@ export function WorktreeCreateModal() {
   const projects = useAppStore((s) => s.projects);
   const selectedWorktreePath = useAppStore((s) => s.selectedWorktreePath);
   const branches = useAppStore((s) => s.branches);
+  const setBranches = useAppStore((s) => s.setBranches);
   const prSearchResults = useAppStore((s) => s.prSearchResults);
+  const setPRSearchResults = useAppStore((s) => s.setPRSearchResults);
   const scannedCopyPaths = useAppStore((s) => s.scannedCopyPaths);
+  const setScannedCopyPaths = useAppStore((s) => s.setScannedCopyPaths);
+  const lastResult = useAppStore((s) => s.lastOperationResult);
+  const setLastResult = useAppStore((s) => s.setLastOperationResult);
 
   const project = projects.find((p) => p.id === projectId);
 
@@ -39,6 +55,7 @@ export function WorktreeCreateModal() {
   const [copyPaths, setCopyPaths] = useState<string[]>([]);
   const [saveCopyConfig, setSaveCopyConfig] = useState(false);
   const [isCreating, setIsCreating] = useState(false);
+  const [createError, setCreateError] = useState<string | null>(null);
 
   // Reset state when modal opens
   useEffect(() => {
@@ -54,12 +71,31 @@ export function WorktreeCreateModal() {
       setCopyPaths(project?.worktreeCopyPaths ?? []);
       setSaveCopyConfig(false);
       setIsCreating(false);
+      setCreateError(null);
+      // Clear stale data from previous project
+      setBranches([]);
+      setPRSearchResults([]);
+      setScannedCopyPaths([]);
     }
   }, [open, project, selectedWorktreePath]);
 
-  // Load branches when "existing-branch" tab is selected
+  // Watch for operation result to close modal or show error
   useEffect(() => {
-    if (activeTab === "existing-branch" && projectId) {
+    if (!isCreating || !lastResult) return;
+    if (lastResult.operation === "create") {
+      if (lastResult.success) {
+        setOpen(false);
+      } else {
+        setCreateError(lastResult.message ?? "Creation failed");
+      }
+      setIsCreating(false);
+      setLastResult(null);
+    }
+  }, [lastResult, isCreating]);
+
+  // Load branches when "new-branch" or "existing-branch" tab is selected
+  useEffect(() => {
+    if ((activeTab === "new-branch" || activeTab === "existing-branch") && projectId) {
       sendMessage({ type: "worktree.listBranches", projectId });
     }
   }, [activeTab, projectId]);
@@ -94,7 +130,7 @@ export function WorktreeCreateModal() {
   // Can create logic
   const canCreate =
     activeTab === "new-branch"
-      ? branchName.trim().length > 0
+      ? branchName.trim().length > 0 && isValidBranchName(branchName)
       : activeTab === "existing-branch"
         ? selectedBranch !== null
         : selectedPR !== null;
@@ -112,6 +148,7 @@ export function WorktreeCreateModal() {
       source = { type: "pr", number: selectedPR!.number };
     }
 
+    setCreateError(null);
     sendMessage({
       type: "worktree.create",
       projectId,
@@ -120,11 +157,6 @@ export function WorktreeCreateModal() {
       copyPaths,
       saveCopyConfig,
     });
-
-    setTimeout(() => {
-      setOpen(false);
-      setIsCreating(false);
-    }, 500);
   };
 
   const tabLabel = (tab: TabId) =>
@@ -167,6 +199,9 @@ export function WorktreeCreateModal() {
                 value={branchName}
                 onChange={(e) => setBranchName(e.target.value)}
               />
+              {branchName && !isValidBranchName(branchName) && (
+                <span className="text-xs text-destructive">Invalid branch name</span>
+              )}
             </div>
             <div>
               <label className="mb-1.5 block text-xs font-medium text-muted-foreground">
@@ -177,9 +212,14 @@ export function WorktreeCreateModal() {
                 value={baseBranch}
                 onChange={(e) => setBaseBranch(e.target.value)}
               >
-                {project?.worktrees.map((wt) => (
-                  <option key={wt.path} value={wt.branch}>
-                    {wt.branch}
+                {[
+                  ...new Set([
+                    ...(project?.worktrees.map((wt) => wt.branch) ?? []),
+                    ...branches.map((b) => b.name),
+                  ]),
+                ].map((branch) => (
+                  <option key={branch} value={branch}>
+                    {branch}
                   </option>
                 ))}
               </select>
@@ -328,6 +368,10 @@ export function WorktreeCreateModal() {
             )}
           </div>
         </div>
+
+        {createError && (
+          <div className="text-xs text-destructive">{createError}</div>
+        )}
 
         <DialogFooter>
           <Button onClick={handleCreate} disabled={isCreating || !canCreate}>

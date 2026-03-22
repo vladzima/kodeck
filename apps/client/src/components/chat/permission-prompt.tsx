@@ -2,15 +2,19 @@ import { ShieldAlert, Check, X } from "lucide-react";
 import { Button } from "../ui/button.tsx";
 import type { PermissionRequest } from "@kodeck/shared";
 
+function str(val: unknown): string {
+  return typeof val === "string" ? val : JSON.stringify(val);
+}
+
 function formatInput(permission: PermissionRequest): string {
   if (permission.toolName === "Bash" && permission.input.command) {
-    return `$ ${String(permission.input.command)}`;
+    return `$ ${str(permission.input.command)}`;
   }
   if (permission.input.file_path) {
-    return String(permission.input.file_path);
+    return str(permission.input.file_path);
   }
   if (permission.input.command) {
-    return String(permission.input.command);
+    return str(permission.input.command);
   }
   return JSON.stringify(permission.input, null, 2);
 }
@@ -38,11 +42,21 @@ export function PermissionPrompt({
             {formatInput(permission)}
           </pre>
           <div className="flex items-center gap-2 pt-1">
-            <Button size="sm" variant="default" className="h-7 gap-1.5 px-3 text-xs" onClick={onAllow}>
+            <Button
+              size="sm"
+              variant="default"
+              className="h-7 gap-1.5 px-3 text-xs"
+              onClick={onAllow}
+            >
               <Check className="h-3.5 w-3.5" />
               Allow
             </Button>
-            <Button size="sm" variant="outline" className="h-7 gap-1.5 px-3 text-xs" onClick={onDeny}>
+            <Button
+              size="sm"
+              variant="outline"
+              className="h-7 gap-1.5 px-3 text-xs"
+              onClick={onDeny}
+            >
               <X className="h-3.5 w-3.5" />
               Deny
             </Button>

@@ -37,11 +37,7 @@ export function MessageList({
   }, [messages, isThinking, autoScroll, permissionPrompt]);
 
   return (
-    <div
-      ref={containerRef}
-      className="flex-1 overflow-y-auto px-6 py-6"
-      onScroll={handleScroll}
-    >
+    <div ref={containerRef} className="flex-1 overflow-y-auto px-6 py-6" onScroll={handleScroll}>
       <div className="flex flex-col gap-10">
         {isCleaned && (
           <div className="flex items-center gap-3 text-xs text-muted-foreground/50">
@@ -67,7 +63,10 @@ export function MessageList({
         {isThinking && (
           <ThinkingIndicator
             label={
-              messages.findLast((m) => m.role === "user")?.content.trim().toLowerCase() === "/compact"
+              messages
+                .findLast((m) => m.role === "user")
+                ?.content.trim()
+                .toLowerCase() === "/compact"
                 ? "Compacting conversation…"
                 : undefined
             }

@@ -1,12 +1,5 @@
 import { useState, memo } from "react";
-import {
-  FileText,
-  TerminalSquare,
-  Search,
-  Loader2,
-  Check,
-  XCircle,
-} from "lucide-react";
+import { FileText, TerminalSquare, Search, Loader2, Check, XCircle } from "lucide-react";
 import type { ToolCallInfo } from "@kodeck/shared";
 
 const TOOL_ICONS: Record<string, typeof FileText> = {
@@ -18,18 +11,18 @@ const TOOL_ICONS: Record<string, typeof FileText> = {
   Glob: Search,
 };
 
+function str(val: unknown): string {
+  return typeof val === "string" ? val : JSON.stringify(val);
+}
+
 function toolSummary(tool: ToolCallInfo): string {
   const input = tool.input;
-  if (tool.name === "Bash" && input.command)
-    return `$ ${String(input.command).slice(0, 80)}`;
-  if (tool.name === "Read" && input.file_path) return String(input.file_path);
-  if (tool.name === "Edit" && input.file_path)
-    return `Edit ${String(input.file_path)}`;
-  if (tool.name === "Write" && input.file_path)
-    return `Write ${String(input.file_path)}`;
-  if (tool.name === "Grep" && input.pattern)
-    return `/${String(input.pattern)}/`;
-  if (tool.name === "Glob" && input.pattern) return String(input.pattern);
+  if (tool.name === "Bash" && input.command) return `$ ${str(input.command).slice(0, 80)}`;
+  if (tool.name === "Read" && input.file_path) return str(input.file_path);
+  if (tool.name === "Edit" && input.file_path) return `Edit ${str(input.file_path)}`;
+  if (tool.name === "Write" && input.file_path) return `Write ${str(input.file_path)}`;
+  if (tool.name === "Grep" && input.pattern) return `/${str(input.pattern)}/`;
+  if (tool.name === "Glob" && input.pattern) return str(input.pattern);
   return tool.name;
 }
 
@@ -46,19 +39,11 @@ function resultBrief(tool: ToolCallInfo): string | null {
   return null;
 }
 
-export const ToolCallCard = memo(function ToolCallCard({
-  toolCall,
-}: {
-  toolCall: ToolCallInfo;
-}) {
+export const ToolCallCard = memo(function ToolCallCard({ toolCall }: { toolCall: ToolCallInfo }) {
   const [expanded, setExpanded] = useState(false);
   const Icon = TOOL_ICONS[toolCall.name] ?? FileText;
   const StatusIcon =
-    toolCall.status === "running"
-      ? Loader2
-      : toolCall.status === "error"
-        ? XCircle
-        : Check;
+    toolCall.status === "running" ? Loader2 : toolCall.status === "error" ? XCircle : Check;
   const brief = resultBrief(toolCall);
 
   return (
@@ -72,9 +57,7 @@ export const ToolCallCard = memo(function ToolCallCard({
         <span className="border-b border-muted-foreground/60 pb-px font-mono">
           {toolSummary(toolCall)}
         </span>
-        {brief && (
-          <span className="text-muted-foreground/50">{brief}</span>
-        )}
+        {brief && <span className="text-muted-foreground/50">{brief}</span>}
         <StatusIcon
           className={`h-3 w-3 shrink-0 ${
             toolCall.status === "running"

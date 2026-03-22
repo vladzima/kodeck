@@ -23,10 +23,7 @@ function TabName({ name }: { name: string }) {
   }, [name]);
 
   return (
-    <span
-      className="max-w-32 truncate transition-opacity duration-150"
-      style={{ opacity }}
-    >
+    <span className="max-w-32 truncate transition-opacity duration-150" style={{ opacity }}>
       {display}
     </span>
   );
@@ -42,9 +39,7 @@ export function TabBar() {
     setDebugMode,
   } = useAppStore();
 
-  const worktreeSessions = sessions.filter(
-    (s) => s.worktreePath === selectedWorktreePath,
-  );
+  const worktreeSessions = sessions.filter((s) => s.worktreePath === selectedWorktreePath);
 
   // Ctrl+1-9 to switch tabs
   useEffect(() => {
@@ -63,19 +58,19 @@ export function TabBar() {
 
   const handleNewSession = (type: "chat" | "terminal") => {
     if (!selectedWorktreePath) return;
+    // Inherit model from the active session so new tabs match the user's current choice
+    const activeSession = sessions.find((s) => s.id === activeSessionId);
+    const model = type === "chat" ? (activeSession?.model ?? DEFAULT_MODEL) : undefined;
     sendMessage({
       type: "session.create",
       worktreePath: selectedWorktreePath,
       sessionType: type,
       name: type === "chat" ? "Chat" : "Terminal",
-      model: type === "chat" ? DEFAULT_MODEL : undefined,
+      model,
     });
   };
 
-  const handleCloseSession = (
-    e: React.MouseEvent,
-    sessionId: string,
-  ) => {
+  const handleCloseSession = (e: React.MouseEvent, sessionId: string) => {
     e.stopPropagation();
     sendMessage({ type: "session.close", sessionId });
   };

@@ -1,7 +1,7 @@
 import { useState, useRef, useEffect } from "react";
-import { Radio, Shield } from "lucide-react";
+import { ChevronDown, Gauge, Radio, Shield } from "lucide-react";
 import spinners from "cli-spinners";
-import type { ChatSessionState, SessionMeta } from "@kodeck/shared";
+import type { ChatSessionState, EffortLevel, SessionMeta } from "@kodeck/shared";
 
 const agentSpinner = spinners.dots8Bit;
 
@@ -28,8 +28,34 @@ function ActivitySpinner() {
     return () => clearInterval(id);
   }, []);
 
+  return <span className="font-mono">{agentSpinner.frames[frame]}</span>;
+}
+
+function SidebarGroup({
+  title,
+  defaultOpen = true,
+  children,
+}: {
+  title: string;
+  defaultOpen?: boolean;
+  children: React.ReactNode;
+}) {
+  const [open, setOpen] = useState(defaultOpen);
+
   return (
-    <span className="font-mono">{agentSpinner.frames[frame]}</span>
+    <div>
+      <button
+        type="button"
+        className="flex w-full cursor-pointer items-center justify-between text-[10px] uppercase tracking-wider text-foreground transition-colors hover:text-foreground/80"
+        onClick={() => setOpen(!open)}
+      >
+        {title}
+        <ChevronDown
+          className={`h-3 w-3 text-muted-foreground/50 transition-transform ${open ? "" : "-rotate-90"}`}
+        />
+      </button>
+      {open && <div className="mt-2 flex flex-col gap-3">{children}</div>}
+    </div>
   );
 }
 
@@ -46,7 +72,13 @@ function shortenModelName(model: string): string {
     .replace(/^(\w)/, (c) => c.toUpperCase());
 }
 
-function ModelSelector({ currentModel, onSelect }: { currentModel: string; onSelect: (model: string) => void }) {
+function ModelSelector({
+  currentModel,
+  onSelect,
+}: {
+  currentModel: string;
+  onSelect: (model: string) => void;
+}) {
   const [open, setOpen] = useState(false);
   const ref = useRef<HTMLDivElement>(null);
 
@@ -93,119 +125,204 @@ function ModelSelector({ currentModel, onSelect }: { currentModel: string; onSel
   );
 }
 
+const EFFORT_LEVELS: { id: EffortLevel; label: string }[] = [
+  { id: "low", label: "Low" },
+  { id: "medium", label: "Medium" },
+  { id: "high", label: "High" },
+  { id: "max", label: "Max" },
+  { id: "auto", label: "Auto" },
+];
+
+function EffortSelector({
+  current,
+  onSelect,
+}: {
+  current: EffortLevel;
+  onSelect: (effort: EffortLevel) => void;
+}) {
+  const [open, setOpen] = useState(false);
+  const ref = useRef<HTMLDivElement>(null);
+
+  useEffect(() => {
+    if (!open) return;
+    const handleClick = (e: MouseEvent) => {
+      if (ref.current && !ref.current.contains(e.target as Node)) setOpen(false);
+    };
+    document.addEventListener("mousedown", handleClick);
+    return () => document.removeEventListener("mousedown", handleClick);
+  }, [open]);
+
+  return (
+    <div ref={ref} className="relative">
+      <button
+        type="button"
+        className="flex w-fit cursor-pointer items-center gap-1 border-b border-muted-foreground/60 pb-px text-muted-foreground transition-colors hover:text-foreground"
+        onClick={() => setOpen(!open)}
+      >
+        <Gauge className="h-3 w-3" />
+        {EFFORT_LEVELS.find((e) => e.id === current)?.label ?? current}
+      </button>
+      {open && (
+        <div className="absolute left-0 top-full mt-1 min-w-[100px] rounded-lg border border-border bg-popover p-1 shadow-lg">
+          {EFFORT_LEVELS.map((e) => (
+            <div
+              key={e.id}
+              className={`cursor-pointer rounded-md px-2 py-1.5 text-[11px] ${
+                e.id === current
+                  ? "bg-accent text-accent-foreground"
+                  : "text-popover-foreground hover:bg-accent/50"
+              }`}
+              onMouseDown={(ev) => {
+                ev.preventDefault();
+                if (e.id !== current) onSelect(e.id);
+                setOpen(false);
+              }}
+            >
+              {e.label}
+            </div>
+          ))}
+        </div>
+      )}
+    </div>
+  );
+}
+
+function StatRow({ label, children }: { label: string; children: React.ReactNode }) {
+  return (
+    <div className="flex flex-col gap-0.5">
+      <span className="text-[10px] uppercase tracking-wider text-muted-foreground/40">{label}</span>
+      {children}
+    </div>
+  );
+}
+
 export function RightSidebar({
   meta,
   state,
   model,
+  effort,
   streaming,
   skipPermissions,
   userTurns,
   assistantTurns,
   visibleMessages,
   onModelChange,
+  onEffortChange,
   onStreamingChange,
   onSkipPermissionsChange,
 }: {
   meta?: SessionMeta;
   state: ChatSessionState;
   model: string;
+  effort: EffortLevel;
   streaming: boolean;
   skipPermissions: boolean;
   userTurns: number;
   assistantTurns: number;
   visibleMessages?: number;
   onModelChange: (model: string) => void;
+  onEffortChange: (effort: EffortLevel) => void;
   onStreamingChange: (streaming: boolean) => void;
   onSkipPermissionsChange: (skip: boolean) => void;
 }) {
+  const hasStats =
+    (meta?.contextTokens != null && meta?.contextWindow != null) ||
+    meta?.costUsd != null ||
+    userTurns > 0 ||
+    assistantTurns > 0 ||
+    (meta?.compactions ?? 0) > 0;
+
   return (
     <div className="flex w-44 shrink-0 flex-col gap-4 border-l border-border px-4 py-4 text-[11px] font-mono text-muted-foreground">
-      {/* Model */}
-      <div className="flex flex-col gap-1">
-        <span className="text-[10px] uppercase tracking-wider text-muted-foreground/50">Model</span>
-        <ModelSelector currentModel={model} onSelect={onModelChange} />
-      </div>
+      {/* Parameters — interactive settings */}
+      <SidebarGroup title="Parameters">
+        <StatRow label="Model">
+          <ModelSelector currentModel={model} onSelect={onModelChange} />
+        </StatRow>
 
-      {/* Context */}
-      {meta?.contextTokens != null && meta?.contextWindow != null && (
-        <div className="flex flex-col gap-1">
-          <span className="text-[10px] uppercase tracking-wider text-muted-foreground/50">Context</span>
-          <span className={tokenColorClass(meta.contextTokens, meta.contextWindow)}>
-            {formatTokens(meta.contextTokens)} / {formatTokens(meta.contextWindow)}
-          </span>
-        </div>
-      )}
+        <StatRow label="Effort">
+          <EffortSelector current={effort} onSelect={onEffortChange} />
+        </StatRow>
 
-      {/* Cost */}
-      {meta?.costUsd != null && (
-        <div className="flex flex-col gap-1">
-          <span className="text-[10px] uppercase tracking-wider text-muted-foreground/50">Cost</span>
-          <span>${meta.costUsd.toFixed(2)}</span>
-        </div>
-      )}
+        <StatRow label="Streaming">
+          <button
+            type="button"
+            className="flex w-fit cursor-pointer items-center gap-1 border-b border-muted-foreground/60 pb-px text-muted-foreground transition-colors hover:text-foreground"
+            onClick={() => onStreamingChange(!streaming)}
+          >
+            <Radio className="h-3 w-3" />
+            {streaming ? "live" : "batch"}
+          </button>
+        </StatRow>
 
-      {/* Messages */}
-      {(userTurns > 0 || assistantTurns > 0) && (
-        <div className="flex flex-col gap-1">
-          <span className="text-[10px] uppercase tracking-wider text-muted-foreground/50">Messages</span>
-          <span>{userTurns} user · {assistantTurns} claude</span>
-          {visibleMessages != null && (
-            <span className="text-muted-foreground/50">{visibleMessages} visible</span>
+        <StatRow label="Permissions">
+          <button
+            type="button"
+            className="flex w-fit cursor-pointer items-center gap-1 border-b border-muted-foreground/60 pb-px text-muted-foreground transition-colors hover:text-foreground"
+            onClick={() => onSkipPermissionsChange(!skipPermissions)}
+          >
+            <Shield className="h-3 w-3" />
+            {skipPermissions ? "Allow all" : "Restricted"}
+          </button>
+        </StatRow>
+      </SidebarGroup>
+
+      {/* Stats — read-only info */}
+      {hasStats && (
+        <>
+        <div className="-mx-4 border-t border-border" />
+        <SidebarGroup title="Stats">
+          {meta?.contextTokens != null && meta?.contextWindow != null && (
+            <StatRow label="Context">
+              <span className={tokenColorClass(meta.contextTokens, meta.contextWindow)}>
+                {formatTokens(meta.contextTokens)} / {formatTokens(meta.contextWindow)}
+              </span>
+            </StatRow>
           )}
-        </div>
-      )}
 
-      {/* Compactions */}
-      {(meta?.compactions ?? 0) > 0 && (
-        <div className="flex flex-col gap-1">
-          <span className="text-[10px] uppercase tracking-wider text-muted-foreground/50">Compactions</span>
-          <span>{meta!.compactions}</span>
-        </div>
-      )}
-
-      {/* Streaming mode */}
-      <div className="flex flex-col gap-1">
-        <span className="text-[10px] uppercase tracking-wider text-muted-foreground/50">Streaming</span>
-        <button
-          type="button"
-          className="flex w-fit cursor-pointer items-center gap-1 border-b border-muted-foreground/60 pb-px text-muted-foreground transition-colors hover:text-foreground"
-          onClick={() => onStreamingChange(!streaming)}
-        >
-          <Radio className="h-3 w-3" />
-          {streaming ? "live" : "batch"}
-        </button>
-      </div>
-
-      {/* Permissions */}
-      <div className="flex flex-col gap-1">
-        <span className="text-[10px] uppercase tracking-wider text-muted-foreground/50">Permissions</span>
-        <button
-          type="button"
-          className="flex w-fit cursor-pointer items-center gap-1 border-b border-muted-foreground/60 pb-px text-muted-foreground transition-colors hover:text-foreground"
-          onClick={() => onSkipPermissionsChange(!skipPermissions)}
-        >
-          <Shield className="h-3 w-3" />
-          {skipPermissions ? "Allow all" : "Restricted"}
-        </button>
-      </div>
-
-      {/* Activity */}
-      {state === "streaming" && ((meta?.activeShells ?? 0) > 0 || (meta?.activeAgents ?? 0) > 0) && (
-        <div className="flex flex-col gap-1">
-          <span className="text-[10px] uppercase tracking-wider text-muted-foreground/50">Activity</span>
-          {(meta?.activeShells ?? 0) > 0 && (
-            <span className="flex items-center gap-1">
-              <ActivitySpinner />
-              {meta!.activeShells} shell{meta!.activeShells! > 1 ? "s" : ""}
-            </span>
+          {meta?.costUsd != null && (
+            <StatRow label="Cost">
+              <span>${meta.costUsd.toFixed(2)}</span>
+            </StatRow>
           )}
-          {(meta?.activeAgents ?? 0) > 0 && (
-            <span className="flex items-center gap-1">
-              <ActivitySpinner />
-              {meta!.activeAgents} agent{meta!.activeAgents! > 1 ? "s" : ""}
-            </span>
+
+          {(userTurns > 0 || assistantTurns > 0) && (
+            <StatRow label="Messages">
+              <span>
+                {userTurns} user · {assistantTurns} claude
+              </span>
+              {visibleMessages != null && (
+                <span className="text-muted-foreground/50">{visibleMessages} visible</span>
+              )}
+            </StatRow>
           )}
-        </div>
+
+          {(meta?.compactions ?? 0) > 0 && (
+            <StatRow label="Compactions">
+              <span>{meta!.compactions}</span>
+            </StatRow>
+          )}
+
+          {/* Activity — only while streaming */}
+          {state === "streaming" &&
+            ((meta?.activeShells ?? 0) > 0 || (meta?.activeAgents ?? 0) > 0) && (
+              <StatRow label="Activity">
+                {(meta?.activeShells ?? 0) > 0 && (
+                  <span className="flex items-center gap-1">
+                    <ActivitySpinner />
+                    {meta!.activeShells} shell{meta!.activeShells! > 1 ? "s" : ""}
+                  </span>
+                )}
+                {(meta?.activeAgents ?? 0) > 0 && (
+                  <span className="flex items-center gap-1">
+                    <ActivitySpinner />
+                    {meta!.activeAgents} agent{meta!.activeAgents! > 1 ? "s" : ""}
+                  </span>
+                )}
+              </StatRow>
+            )}
+        </SidebarGroup>
+        </>
       )}
     </div>
   );

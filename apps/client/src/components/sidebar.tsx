@@ -72,21 +72,9 @@ function WorktreeItem({
       <div className="flex w-full items-center gap-1.5">
         <GitBranch className="h-3.5 w-3.5 shrink-0" />
         <span className="min-w-0 flex-1 truncate">{worktree.branch}</span>
-        {!hovered && (hasAhead || hasBehind) && (
+        {!hovered && hasAhead && (
           <span className="flex shrink-0 items-center gap-1 text-xs">
-            {hasAhead && <span className="text-green-400">↑{worktree.ahead}</span>}
-            {hasBehind && (
-              <span
-                className="cursor-pointer rounded px-0.5 text-orange-400 transition-colors hover:bg-orange-400/20"
-                onClick={(e) => {
-                  e.stopPropagation();
-                  sendMessage({ type: "worktree.pull", worktreePath: worktree.path });
-                }}
-                title="Pull changes"
-              >
-                ↓{worktree.behind}
-              </span>
-            )}
+            <span className="text-green-400">↑{worktree.ahead}</span>
           </span>
         )}
       </div>

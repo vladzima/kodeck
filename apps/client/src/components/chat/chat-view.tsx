@@ -1,4 +1,4 @@
-import { DEFAULT_MODEL } from "@kodeck/shared";
+import { DEFAULT_MODEL, type ChatAttachment, type EffortLevel } from "@kodeck/shared";
 import { useAppStore } from "../../store.ts";
 import { sendMessage } from "../../hooks/use-websocket.ts";
 import { MessageList } from "./message-list.tsx";
@@ -15,6 +15,7 @@ export function ChatView({ sessionId }: { sessionId: string }) {
   const meta = useAppStore((s) => s.sessionMeta.get(sessionId));
   const session = useAppStore((s) => s.sessions.find((sess) => sess.id === sessionId));
   const setSessionModel = useAppStore((s) => s.setSessionModel);
+  const setSessionEffort = useAppStore((s) => s.setSessionEffort);
   const setSessionSkipPermissions = useAppStore((s) => s.setSessionSkipPermissions);
   const setSessionStreaming = useAppStore((s) => s.setSessionStreaming);
   const pendingPermission = useAppStore((s) => s.pendingPermission.get(sessionId));
@@ -36,12 +37,11 @@ export function ChatView({ sessionId }: { sessionId: string }) {
 
   const lastMessage = allMessages[allMessages.length - 1];
   const isThinking =
-    state === "streaming" &&
-    !(lastMessage?.role === "assistant" && lastMessage.isStreaming);
+    state === "streaming" && !(lastMessage?.role === "assistant" && lastMessage.isStreaming);
 
-  const handleSend = (text: string) => {
-    addUserMessage(sessionId, text);
-    sendMessage({ type: "chat.send", sessionId, text });
+  const handleSend = (text: string, attachments?: ChatAttachment[]) => {
+    addUserMessage(sessionId, text, attachments);
+    sendMessage({ type: "chat.send", sessionId, text, attachments });
   };
 
   const handleInterrupt = () => {
@@ -51,6 +51,11 @@ export function ChatView({ sessionId }: { sessionId: string }) {
   const handleModelChange = (model: string) => {
     setSessionModel(sessionId, model);
     sendMessage({ type: "chat.model", sessionId, model });
+  };
+
+  const handleEffortChange = (effort: EffortLevel) => {
+    setSessionEffort(sessionId, effort);
+    sendMessage({ type: "chat.effort", sessionId, effort });
   };
 
   const handleSkipPermissionsChange = (skip: boolean) => {
@@ -65,13 +70,25 @@ export function ChatView({ sessionId }: { sessionId: string }) {
 
   const handlePermissionAllow = () => {
     if (!pendingPermission) return;
-    sendMessage({ type: "chat.permission", sessionId, requestId: pendingPermission.requestId, toolUseId: pendingPermission.toolUseId, allow: true });
+    sendMessage({
+      type: "chat.permission",
+      sessionId,
+      requestId: pendingPermission.requestId,
+      toolUseId: pendingPermission.toolUseId,
+      allow: true,
+    });
     clearPendingPermission(sessionId);
   };
 
   const handlePermissionDeny = () => {
     if (!pendingPermission) return;
-    sendMessage({ type: "chat.permission", sessionId, requestId: pendingPermission.requestId, toolUseId: pendingPermission.toolUseId, allow: false });
+    sendMessage({
+      type: "chat.permission",
+      sessionId,
+      requestId: pendingPermission.requestId,
+      toolUseId: pendingPermission.toolUseId,
+      allow: false,
+    });
     clearPendingPermission(sessionId);
   };
 
@@ -114,12 +131,14 @@ export function ChatView({ sessionId }: { sessionId: string }) {
         meta={meta}
         state={state}
         model={session?.model ?? DEFAULT_MODEL}
+        effort={session?.effort ?? "high"}
         streaming={session?.streaming ?? false}
         skipPermissions={session?.skipPermissions ?? false}
         userTurns={userTurns}
         assistantTurns={assistantTurns}
         visibleMessages={visibleMessages}
         onModelChange={handleModelChange}
+        onEffortChange={handleEffortChange}
         onStreamingChange={handleStreamingChange}
         onSkipPermissionsChange={handleSkipPermissionsChange}
       />

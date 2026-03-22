@@ -21,9 +21,7 @@ function formatTime(ts: number): string {
 }
 
 export function MessageTime({ timestamp }: { timestamp: number | undefined }) {
-  const [display, setDisplay] = useState(() =>
-    timestamp ? formatTime(timestamp) : "",
-  );
+  const [display, setDisplay] = useState(() => (timestamp ? formatTime(timestamp) : ""));
 
   useEffect(() => {
     if (!timestamp) return;
@@ -34,7 +32,5 @@ export function MessageTime({ timestamp }: { timestamp: number | undefined }) {
 
   if (!timestamp) return null;
 
-  return (
-    <span className="text-[11px] text-muted-foreground/40">{display}</span>
-  );
+  return <span className="text-[11px] text-muted-foreground/40">{display}</span>;
 }

@@ -123,6 +123,14 @@ function handleServerMessage(msg: ServerMessage): void {
       break;
 
     case "worktree.operationResult":
+      state.setLastOperationResult({
+        operation: msg.operation,
+        success: msg.success,
+        message: msg.message,
+      });
+      if (msg.message) {
+        state.addNotification(msg.message, msg.success ? "success" : "error");
+      }
       if (!msg.success) {
         console.error(`[kodeck] Worktree ${msg.operation} failed:`, msg.message);
       }

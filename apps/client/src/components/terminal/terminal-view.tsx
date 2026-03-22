@@ -26,8 +26,7 @@ export const TerminalView = memo(function TerminalView({
 
     const terminal = new Terminal({
       fontSize: 14,
-      fontFamily:
-        "'Geist Mono Variable', 'GeistMono', ui-monospace, monospace",
+      fontFamily: "'Geist Mono Variable', 'GeistMono', ui-monospace, monospace",
       theme: {
         background: bg,
         foreground: fg,

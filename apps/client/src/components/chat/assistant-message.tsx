@@ -6,11 +6,7 @@ import { MessageTime } from "./message-time.tsx";
 
 const plugins = { code };
 
-export function AssistantMessage({
-  message,
-}: {
-  message: ChatAssistantMessage;
-}) {
+export function AssistantMessage({ message }: { message: ChatAssistantMessage }) {
   const blocks = message.contentBlocks;
   const hasBlocks = blocks && blocks.length > 0;
 
@@ -24,11 +20,7 @@ export function AssistantMessage({
         blocks.map((block, i) =>
           block.type === "text" ? (
             <div key={i} className="text-foreground">
-              <Streamdown
-                animated
-                isAnimating={message.isStreaming}
-                plugins={plugins}
-              >
+              <Streamdown animated isAnimating={message.isStreaming} plugins={plugins}>
                 {block.text}
               </Streamdown>
             </div>
@@ -42,11 +34,7 @@ export function AssistantMessage({
         <>
           {message.text && (
             <div className="text-foreground">
-              <Streamdown
-                animated
-                isAnimating={message.isStreaming}
-                plugins={plugins}
-              >
+              <Streamdown animated isAnimating={message.isStreaming} plugins={plugins}>
                 {message.text}
               </Streamdown>
             </div>

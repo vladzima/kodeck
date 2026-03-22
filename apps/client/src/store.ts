@@ -106,6 +106,17 @@ interface AppState {
   worktreeCreateProjectId: string | null;
   setWorktreeCreateProjectId: (id: string | null) => void;
 
+  // Worktree operation result (for modal feedback)
+  lastOperationResult: { operation: string; success: boolean; message?: string } | null;
+  setLastOperationResult: (
+    result: { operation: string; success: boolean; message?: string } | null,
+  ) => void;
+
+  // Notifications
+  notifications: Array<{ id: string; message: string; type: "success" | "error" }>;
+  addNotification: (message: string, type: "success" | "error") => void;
+  removeNotification: (id: string) => void;
+
   // Worktree status updates
   updateWorktreeStatus: (projectId: string, worktrees: WorktreeInfo[]) => void;
 }
@@ -445,6 +456,24 @@ export const useAppStore = create<AppState>((set) => ({
   setWorktreeCreateModalOpen: (open) => set({ worktreeCreateModalOpen: open }),
   worktreeCreateProjectId: null,
   setWorktreeCreateProjectId: (id) => set({ worktreeCreateProjectId: id }),
+
+  // Worktree operation result
+  lastOperationResult: null,
+  setLastOperationResult: (result) => set({ lastOperationResult: result }),
+
+  // Notifications
+  notifications: [],
+  addNotification: (message, type) =>
+    set((state) => ({
+      notifications: [
+        ...state.notifications,
+        { id: crypto.randomUUID(), message, type },
+      ],
+    })),
+  removeNotification: (id) =>
+    set((state) => ({
+      notifications: state.notifications.filter((n) => n.id !== id),
+    })),
 
   // Worktree status updates
   updateWorktreeStatus: (projectId, worktrees) =>

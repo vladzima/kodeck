@@ -29,14 +29,8 @@ export function ThinkingIndicator({ label }: { label?: string }) {
 
   return (
     <div className="flex items-center gap-2 text-sm text-muted-foreground">
-      <span className="inline-block w-4 text-center font-mono">
-        {spinner.frames[frame]}
-      </span>
-      {label ? (
-        <span>{label}</span>
-      ) : (
-        <span className="tabular-nums">{seconds}s</span>
-      )}
+      <span className="inline-block w-4 text-center font-mono">{spinner.frames[frame]}</span>
+      {label ? <span>{label}</span> : <span className="tabular-nums">{seconds}s</span>}
     </div>
   );
 }
