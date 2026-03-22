@@ -6,6 +6,7 @@ import { ChatInput } from "./chat-input.tsx";
 export function ChatView({ sessionId }: { sessionId: string }) {
   const chatData = useAppStore((s) => s.chatData.get(sessionId));
   const addUserMessage = useAppStore((s) => s.addUserMessage);
+  const slashCommands = useAppStore((s) => s.slashCommands.get(sessionId) ?? []);
 
   const messages = chatData?.messages ?? [];
   const state = chatData?.state ?? "idle";
@@ -33,6 +34,7 @@ export function ChatView({ sessionId }: { sessionId: string }) {
         onInterrupt={handleInterrupt}
         state={state}
         inputHistory={inputHistory}
+        slashCommands={slashCommands}
       />
     </div>
   );
