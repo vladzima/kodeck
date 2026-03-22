@@ -16,6 +16,14 @@ import { useAppStore } from "../store.ts";
 import { sendMessage } from "../hooks/use-websocket.ts";
 import { Button } from "./ui/button.tsx";
 import { ScrollArea } from "./ui/scroll-area.tsx";
+import {
+  Dialog,
+  DialogContent,
+  DialogHeader,
+  DialogTitle,
+  DialogFooter,
+  DialogDescription,
+} from "./ui/dialog.tsx";
 
 function CiStatusDot({ status }: { status?: "pending" | "success" | "failure" }) {
   if (status === "success") return <span className="text-green-400">●</span>;
@@ -33,14 +41,14 @@ function ReviewStatusIcon({ status }: { status?: "pending" | "approved" | "chang
 
 function WorktreeItem({
   worktree,
-  projectId,
   isSelected,
   onSelect,
+  onRemove,
 }: {
   worktree: WorktreeInfo;
-  projectId: string;
   isSelected: boolean;
   onSelect: () => void;
+  onRemove: () => void;
 }) {
   const [hovered, setHovered] = useState(false);
 
@@ -142,7 +150,7 @@ function WorktreeItem({
               className="rounded-sm p-1 text-red-400/60 transition-colors hover:bg-red-400/10 hover:text-red-400"
               onClick={(e) => {
                 e.stopPropagation();
-                sendMessage({ type: "worktree.remove", projectId, worktreePath: worktree.path });
+                onRemove();
               }}
               title="Remove worktree"
             >
@@ -157,8 +165,24 @@ function WorktreeItem({
 
 function ProjectItem({ project }: { project: ProjectWithWorktrees }) {
   const [expanded, setExpanded] = useState(true);
-  const { selectedWorktreePath, selectWorktree } = useAppStore();
+  const [removeWorktree, setRemoveWorktree] = useState<WorktreeInfo | null>(null);
+  const { selectedWorktreePath, selectWorktree, sessions } = useAppStore();
   const { setWorktreeCreateModalOpen, setWorktreeCreateProjectId } = useAppStore();
+
+  const sessionsInWorktree = removeWorktree
+    ? sessions.filter((s) => s.worktreePath === removeWorktree.path).length
+    : 0;
+
+  const handleConfirmRemove = () => {
+    if (!removeWorktree) return;
+    sendMessage({ type: "worktree.remove", projectId: project.id, worktreePath: removeWorktree.path });
+    // If we're removing the selected worktree, switch to main
+    if (selectedWorktreePath === removeWorktree.path) {
+      const main = project.worktrees.find((w) => w.isMain);
+      if (main) selectWorktree(main.path);
+    }
+    setRemoveWorktree(null);
+  };
 
   return (
     <div>
@@ -195,13 +219,33 @@ function ProjectItem({ project }: { project: ProjectWithWorktrees }) {
             <WorktreeItem
               key={wt.path}
               worktree={wt}
-              projectId={project.id}
               isSelected={selectedWorktreePath === wt.path}
               onSelect={() => selectWorktree(wt.path)}
+              onRemove={() => setRemoveWorktree(wt)}
             />
           ))}
         </div>
       )}
+
+      {/* Remove confirmation dialog */}
+      <Dialog open={!!removeWorktree} onOpenChange={(open) => !open && setRemoveWorktree(null)}>
+        <DialogContent className="sm:max-w-sm">
+          <DialogHeader>
+            <DialogTitle>Remove worktree</DialogTitle>
+            <DialogDescription>
+              Remove worktree <code className="rounded bg-muted px-1 py-0.5 text-xs font-mono">{removeWorktree?.branch}</code>?
+              {sessionsInWorktree > 0 && (
+                <> This will kill {sessionsInWorktree} active session{sessionsInWorktree > 1 ? "s" : ""} and</>
+              )}{" "}
+              {sessionsInWorktree > 0 ? "delete" : "Delete"} the directory from disk.
+            </DialogDescription>
+          </DialogHeader>
+          <DialogFooter>
+            <Button variant="outline" onClick={() => setRemoveWorktree(null)}>Cancel</Button>
+            <Button variant="destructive" onClick={handleConfirmRemove}>Remove</Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
     </div>
   );
 }

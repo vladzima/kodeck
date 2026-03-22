@@ -3,6 +3,7 @@ import { useAppStore } from "./store.ts";
 import { Sidebar } from "./components/sidebar.tsx";
 import { TabBar } from "./components/tab-bar.tsx";
 import { MainPanel } from "./components/main-panel.tsx";
+import { WorktreeCreateModal } from "./components/worktree-create-modal.tsx";
 
 export function App() {
   useWebSocket();
@@ -22,6 +23,7 @@ export function App() {
           </div>
         )}
       </div>
+      <WorktreeCreateModal />
     </div>
   );
 }
