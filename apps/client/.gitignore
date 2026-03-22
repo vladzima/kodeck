@@ -22,10 +22,3 @@ dist-ssr
 *.njsproj
 *.sln
 *.sw?
-
-# Claude Code
-.claude/
-.agents/
-
-# Editor
-.zed/
