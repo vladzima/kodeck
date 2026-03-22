@@ -27,3 +27,15 @@ export async function saveConfig(config: KodeckConfig): Promise<void> {
   await mkdir(CONFIG_DIR, { recursive: true });
   await writeFile(CONFIG_FILE, JSON.stringify(config, null, 2));
 }
+
+export async function updateProjectCopyPaths(
+  projectId: string,
+  copyPaths: string[],
+): Promise<void> {
+  const config = await loadConfig();
+  const project = config.projects.find((p) => p.id === projectId);
+  if (project) {
+    project.worktreeCopyPaths = copyPaths;
+    await saveConfig(config);
+  }
+}
