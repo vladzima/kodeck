@@ -1,0 +1,25 @@
+packages:
+  - apps/*
+  - packages/*
+  - tools/*
+
+catalog:
+  '@tailwindcss/vite': ^4.2.2
+  "@types/node": ^24
+  tailwindcss: ^4.2.2
+  typescript: ^5
+  vite: npm:@voidzero-dev/vite-plus-core@latest
+  vite-plus: latest
+  vitest: npm:@voidzero-dev/vite-plus-test@latest
+
+catalogMode: prefer
+overrides:
+  vite: "catalog:"
+  vitest: "catalog:"
+peerDependencyRules:
+  allowAny:
+    - vite
+    - vitest
+  allowedVersions:
+    vite: "*"
+    vitest: "*"
