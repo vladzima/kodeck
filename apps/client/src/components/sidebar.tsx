@@ -355,19 +355,19 @@ export function Sidebar() {
 
   return (
     <div className="relative flex h-full shrink-0 flex-col border-r border-border bg-sidebar text-[11px] font-mono text-muted-foreground" style={{ width }}>
-      <div className="flex h-10 items-center justify-between border-b border-border px-4">
+      <div className="flex h-10 items-center border-b border-border px-4">
         <span className="text-[10px] uppercase tracking-wider text-foreground">Projects</span>
-        <button
-          type="button"
-          className="rounded-md p-1 text-muted-foreground/50 transition-colors hover:text-foreground"
-          onClick={handleAddProject}
-          title="Add project"
-        >
-          <Plus className="h-3 w-3" />
-        </button>
       </div>
       <ScrollArea className="flex-1 px-2 py-3">
         <div className="flex flex-col gap-1">
+          <button
+            type="button"
+            className="flex w-full items-center gap-1.5 rounded-md px-2 py-1 text-[11px] font-mono text-muted-foreground/60 transition-colors hover:text-foreground"
+            onClick={handleAddProject}
+          >
+            <Plus className="h-3 w-3" />
+            Add project
+          </button>
           {projects.map((project) => (
             <ProjectItem key={project.id} project={project} />
           ))}
