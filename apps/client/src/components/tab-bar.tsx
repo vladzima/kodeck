@@ -73,13 +73,13 @@ export function TabBar() {
           )}
           <span className="max-w-24 truncate">{session.name}</span>
           {index < 9 && (
-            <span className="ml-0.5 rounded bg-foreground/10 px-1 py-0.5 text-[10px] leading-none text-muted-foreground">
+            <span className="rounded bg-foreground/10 px-1 py-0.5 text-[10px] leading-none text-muted-foreground">
               ^{index + 1}
             </span>
           )}
           <button
             type="button"
-            className="ml-1 rounded-sm p-0.5 opacity-0 transition-opacity hover:bg-foreground/10 group-hover:opacity-100"
+            className="rounded-sm p-0.5 text-muted-foreground/50 transition-colors hover:bg-foreground/10 hover:text-foreground"
             onClick={(e) => handleCloseSession(e, session.id)}
           >
             <X className="h-3 w-3" />
