@@ -133,31 +133,31 @@ Defined as TypeScript discriminated unions in `packages/shared`.
 
 ### Client → Server
 
-| Type | Purpose |
-|------|---------|
-| `session.create` | Create chat or terminal session for a worktree |
-| `session.close` | Terminate a session |
-| `chat.send` | Send user message to Claude session |
-| `chat.interrupt` | SIGINT to stop Claude |
-| `chat.permission` | Accept/deny permission request |
-| `terminal.input` | Raw keystrokes to PTY |
-| `terminal.resize` | Terminal dimensions changed |
-| `project.add` / `project.remove` | Register/unregister repo |
-| `worktree.create` / `worktree.remove` | Manage git worktrees |
+| Type                                  | Purpose                                        |
+| ------------------------------------- | ---------------------------------------------- |
+| `session.create`                      | Create chat or terminal session for a worktree |
+| `session.close`                       | Terminate a session                            |
+| `chat.send`                           | Send user message to Claude session            |
+| `chat.interrupt`                      | SIGINT to stop Claude                          |
+| `chat.permission`                     | Accept/deny permission request                 |
+| `terminal.input`                      | Raw keystrokes to PTY                          |
+| `terminal.resize`                     | Terminal dimensions changed                    |
+| `project.add` / `project.remove`      | Register/unregister repo                       |
+| `worktree.create` / `worktree.remove` | Manage git worktrees                           |
 
 ### Server → Client
 
-| Type | Purpose |
-|------|---------|
-| `chat.text` | Streamed assistant text (batched) |
-| `chat.tool_call` | Tool invocation started |
-| `chat.tool_result` | Tool completed |
-| `chat.permission_request` | Claude needs approval |
-| `chat.state` | Session state change |
-| `chat.error` | Session error |
-| `terminal.output` | Batched PTY bytes |
-| `terminal.exit` | PTY process exited |
-| `project.worktrees` | Updated worktree list |
+| Type                      | Purpose                           |
+| ------------------------- | --------------------------------- |
+| `chat.text`               | Streamed assistant text (batched) |
+| `chat.tool_call`          | Tool invocation started           |
+| `chat.tool_result`        | Tool completed                    |
+| `chat.permission_request` | Claude needs approval             |
+| `chat.state`              | Session state change              |
+| `chat.error`              | Session error                     |
+| `terminal.output`         | Batched PTY bytes                 |
+| `terminal.exit`           | PTY process exited                |
+| `project.worktrees`       | Updated worktree list             |
 
 All messages carry a `type` discriminator and `sessionId` for routing to the correct tab.
 
@@ -175,15 +175,15 @@ Performance is a first-class concern. The browser is the weak point.
 
 ## Tech Stack Summary
 
-| Layer | Choice |
-|-------|--------|
-| Frontend framework | React (via Vite+) |
-| Styling | Tailwind CSS v4 + shadcn/ui (radix-nova) |
-| Terminal | xterm.js |
-| State management | Zustand |
-| Backend | Node.js |
-| PTY management | node-pty |
+| Layer                   | Choice                                            |
+| ----------------------- | ------------------------------------------------- |
+| Frontend framework      | React (via Vite+)                                 |
+| Styling                 | Tailwind CSS v4 + shadcn/ui (radix-nova)          |
+| Terminal                | xterm.js                                          |
+| State management        | Zustand                                           |
+| Backend                 | Node.js                                           |
+| PTY management          | node-pty                                          |
 | Claude Code integration | CLI subprocess with `--output-format stream-json` |
-| IPC | WebSocket |
-| Config storage | JSON files in `~/.kodeck/` |
-| Monorepo tooling | pnpm + Vite+ |
+| IPC                     | WebSocket                                         |
+| Config storage          | JSON files in `~/.kodeck/`                        |
+| Monorepo tooling        | pnpm + Vite+                                      |

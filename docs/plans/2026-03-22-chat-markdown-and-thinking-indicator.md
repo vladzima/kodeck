@@ -13,11 +13,13 @@
 ### Task 1: Install dependencies
 
 **Files:**
+
 - Modify: `apps/client/package.json`
 
 **Step 1: Install streamdown + code plugin + cli-spinners**
 
 Run:
+
 ```bash
 cd /Users/vladvarbatov/Projects/kodeck && pnpm add streamdown @streamdown/code cli-spinners -F client
 ```
@@ -25,6 +27,7 @@ cd /Users/vladvarbatov/Projects/kodeck && pnpm add streamdown @streamdown/code c
 **Step 2: Install cli-spinners types (it has built-in types, verify)**
 
 Check if `node_modules/cli-spinners/index.d.ts` exists. If not:
+
 ```bash
 pnpm add -D @types/cli-spinners -F client
 ```
@@ -34,6 +37,7 @@ pnpm add -D @types/cli-spinners -F client
 Modify: `apps/client/src/index.css` (or wherever Tailwind is configured)
 
 Add this line near the top with other `@source` directives:
+
 ```css
 @source "../node_modules/streamdown/dist/*.js";
 ```
@@ -52,6 +56,7 @@ git commit -m "feat: add streamdown and cli-spinners dependencies"
 ### Task 2: Render assistant messages with streamdown
 
 **Files:**
+
 - Modify: `apps/client/src/components/chat/assistant-message.tsx`
 
 **Step 1: Replace pre with Streamdown component**
@@ -66,20 +71,12 @@ import { ToolCallCard } from "./tool-call-card.tsx";
 
 const plugins = { code };
 
-export function AssistantMessage({
-  message,
-}: {
-  message: ChatAssistantMessage;
-}) {
+export function AssistantMessage({ message }: { message: ChatAssistantMessage }) {
   return (
     <div className="flex flex-col gap-2">
       {message.text && (
         <div className="max-w-[80%] text-sm">
-          <Streamdown
-            animated
-            isAnimating={message.isStreaming}
-            plugins={plugins}
-          >
+          <Streamdown animated isAnimating={message.isStreaming} plugins={plugins}>
             {message.text}
           </Streamdown>
         </div>
@@ -93,6 +90,7 @@ export function AssistantMessage({
 ```
 
 Key changes:
+
 - Import `Streamdown` from `"streamdown"` and `code` from `"@streamdown/code"`
 - Replace `<pre className="whitespace-pre-wrap font-sans">` with `<Streamdown>` component
 - Pass `animated` and `isAnimating={message.isStreaming}` for streaming animation
@@ -116,6 +114,7 @@ git commit -m "feat: render assistant messages with streamdown markdown"
 ### Task 3: Build the ThinkingIndicator component
 
 **Files:**
+
 - Create: `apps/client/src/components/chat/thinking-indicator.tsx`
 
 **Step 1: Create the ThinkingIndicator component**
@@ -154,9 +153,7 @@ export function ThinkingIndicator() {
 
   return (
     <div className="flex items-center gap-2 text-sm text-muted-foreground">
-      <span className="inline-block w-4 text-center font-mono">
-        {spinner.frames[frame]}
-      </span>
+      <span className="inline-block w-4 text-center font-mono">{spinner.frames[frame]}</span>
       <span className="tabular-nums">{seconds}s</span>
     </div>
   );
@@ -164,6 +161,7 @@ export function ThinkingIndicator() {
 ```
 
 Key details:
+
 - `spinners.dots` has 10 braille frames at 80ms intervals — smooth and unobtrusive
 - Elapsed timer updates every 10ms for smooth centisecond display
 - `tabular-nums` prevents width jitter as digits change
@@ -182,6 +180,7 @@ git commit -m "feat: add ThinkingIndicator with spinner and elapsed timer"
 ### Task 4: Wire ThinkingIndicator into ChatView
 
 **Files:**
+
 - Modify: `apps/client/src/components/chat/chat-view.tsx`
 - Modify: `apps/client/src/components/chat/message-list.tsx`
 - Modify: `apps/client/src/store.ts`
@@ -234,11 +233,7 @@ export function MessageList({
   }, [messages, isThinking, autoScroll]);
 
   return (
-    <div
-      ref={containerRef}
-      className="flex-1 overflow-y-auto px-4 py-4"
-      onScroll={handleScroll}
-    >
+    <div ref={containerRef} className="flex-1 overflow-y-auto px-4 py-4" onScroll={handleScroll}>
       <div className="flex flex-col gap-4">
         {messages.map((msg, i) =>
           msg.role === "user" ? (
@@ -256,6 +251,7 @@ export function MessageList({
 ```
 
 Key changes:
+
 - Import `ThinkingIndicator`
 - Add `isThinking` prop
 - Render `<ThinkingIndicator />` after messages when `isThinking` is true
@@ -266,6 +262,7 @@ Key changes:
 Modify `apps/client/src/components/chat/chat-view.tsx`:
 
 The thinking indicator should show when:
+
 - State is "streaming" AND
 - There's no assistant message currently streaming (i.e., the last message is NOT an assistant message with `isStreaming: true`)
 
@@ -285,8 +282,7 @@ export function ChatView({ sessionId }: { sessionId: string }) {
 
   const lastMessage = messages[messages.length - 1];
   const isThinking =
-    state === "streaming" &&
-    !(lastMessage?.role === "assistant" && lastMessage.isStreaming);
+    state === "streaming" && !(lastMessage?.role === "assistant" && lastMessage.isStreaming);
 
   const handleSend = (text: string) => {
     addUserMessage(sessionId, text);

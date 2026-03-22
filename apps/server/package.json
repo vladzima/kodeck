@@ -8,8 +8,8 @@
   },
   "dependencies": {
     "@kodeck/shared": "workspace:*",
-    "ws": "^8.18.0",
-    "node-pty": "1.2.0-beta.12"
+    "node-pty": "1.2.0-beta.12",
+    "ws": "^8.18.0"
   },
   "devDependencies": {
     "@types/node": "catalog:",

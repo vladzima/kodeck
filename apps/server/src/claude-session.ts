@@ -3,6 +3,7 @@ import { createInterface } from "node:readline";
 import { randomUUID } from "node:crypto";
 import { EventEmitter } from "node:events";
 import type {
+  ChatAttachment,
   ChatSessionState,
   SessionMeta,
   ToolCallInfo,
@@ -34,12 +35,15 @@ export class ClaudeSession extends EventEmitter<ClaudeSessionEvents> {
   private readyResolve: (() => void) | null = null;
   private ready: Promise<void>;
   private lastUserMessageWasCompact = false;
+  private emittedTextThisTurn = false;
   private userHasSentMessage = false; // suppress replayed events on resume
   claudeSessionId: string | null = null;
 
   constructor() {
     super();
-    this.ready = new Promise((resolve) => { this.readyResolve = resolve; });
+    this.ready = new Promise((resolve) => {
+      this.readyResolve = resolve;
+    });
   }
 
   get state(): ChatSessionState {
@@ -60,14 +64,19 @@ export class ClaudeSession extends EventEmitter<ClaudeSessionEvents> {
     this.emit("state", state);
   }
 
-  spawn(cwd: string, opts?: { resumeSessionId?: string; model?: string; skipPermissions?: boolean; streaming?: boolean }): void {
+  spawn(
+    cwd: string,
+    opts?: {
+      resumeSessionId?: string;
+      model?: string;
+      effort?: string;
+      skipPermissions?: boolean;
+      streaming?: boolean;
+    },
+  ): void {
     this.streaming = opts?.streaming ?? false;
 
-    const args = [
-      "--output-format", "stream-json",
-      "--input-format", "stream-json",
-      "--verbose",
-    ];
+    const args = ["--output-format", "stream-json", "--input-format", "stream-json", "--verbose"];
     if (this.streaming) {
       args.push("--include-partial-messages");
     }
@@ -76,6 +85,9 @@ export class ClaudeSession extends EventEmitter<ClaudeSessionEvents> {
     }
     if (opts?.model) {
       args.push("--model", opts.model);
+    }
+    if (opts?.effort) {
+      args.push("--effort", opts.effort);
     }
     if (opts?.skipPermissions) {
       args.push("--dangerously-skip-permissions");
@@ -159,6 +171,7 @@ export class ClaudeSession extends EventEmitter<ClaudeSessionEvents> {
         } else if (inner.type === "content_block_delta") {
           const delta = inner.delta;
           if (delta?.type === "text_delta" && delta.text) {
+            this.emittedTextThisTurn = true;
             this.emit("text", delta.text, this.currentMessageId);
           }
           // thinking deltas are ignored for now — they come in many tiny chunks
@@ -177,6 +190,7 @@ export class ClaudeSession extends EventEmitter<ClaudeSessionEvents> {
           if (block.type === "text") {
             // In streaming mode, text was already emitted via stream_event deltas — skip
             if (!this.streaming) {
+              this.emittedTextThisTurn = true;
               this.emit("text", block.text, this.currentMessageId);
             }
           } else if (block.type === "thinking") {
@@ -224,9 +238,7 @@ export class ClaudeSession extends EventEmitter<ClaudeSessionEvents> {
             this.emit(
               "tool_result",
               block.tool_use_id,
-              typeof block.content === "string"
-                ? block.content
-                : JSON.stringify(block.content),
+              typeof block.content === "string" ? block.content : JSON.stringify(block.content),
               block.is_error ?? false,
             );
             this.emitActivityMeta();
@@ -237,11 +249,14 @@ export class ClaudeSession extends EventEmitter<ClaudeSessionEvents> {
 
       case "result": {
         if (!this.userHasSentMessage) break; // suppress replayed result on resume
-        // For compaction, synthesize a confirmation message (no assistant text is emitted)
-        if (this.lastUserMessageWasCompact) {
-          const summary = (event.result && typeof event.result === "string") ? event.result : "Conversation compacted.";
-          this.emit("text", summary, this.currentMessageId);
+        // If no assistant text was emitted this turn (slash commands, compaction, etc.),
+        // show the result text so the user gets feedback.
+        if (!this.emittedTextThisTurn && event.result && typeof event.result === "string") {
+          this.emit("text", event.result, this.currentMessageId);
+        } else if (!this.emittedTextThisTurn && this.lastUserMessageWasCompact) {
+          this.emit("text", "Conversation compacted.", this.currentMessageId);
         }
+        this.emittedTextThisTurn = false;
         this.setState("idle");
         this.activeToolCalls.clear();
         this.emit("end", this.currentMessageId);
@@ -259,8 +274,7 @@ export class ClaudeSession extends EventEmitter<ClaudeSessionEvents> {
             // Context = conversation tokens only (excludes cached system prompt)
             // cacheReadInputTokens is the static system prompt — not the user's conversation
             const contextTokens =
-              (primary.inputTokens ?? 0) +
-              (primary.cacheCreationInputTokens ?? 0);
+              (primary.inputTokens ?? 0) + (primary.cacheCreationInputTokens ?? 0);
             this._meta.contextTokens = contextTokens;
             if (primary.contextWindow) {
               this._meta.contextWindow = primary.contextWindow;
@@ -313,7 +327,7 @@ export class ClaudeSession extends EventEmitter<ClaudeSessionEvents> {
     this.emit("meta", { ...this._meta });
   }
 
-  async send(text: string): Promise<void> {
+  async send(text: string, attachments?: ChatAttachment[]): Promise<void> {
     await this.ready;
 
     if (!this.proc?.stdin?.writable) {
@@ -323,12 +337,38 @@ export class ClaudeSession extends EventEmitter<ClaudeSessionEvents> {
 
     this.currentMessageId = randomUUID();
     this.userHasSentMessage = true;
+    this.emittedTextThisTurn = false;
     this.lastUserMessageWasCompact = text.trim().toLowerCase() === "/compact";
     this.setState("streaming");
 
+    // Build content: plain string when no attachments, content blocks array otherwise
+    let content: string | Array<Record<string, unknown>> = text;
+    if (attachments?.length) {
+      const blocks: Array<Record<string, unknown>> = [];
+      for (const att of attachments) {
+        if (att.mediaType.startsWith("image/")) {
+          blocks.push({
+            type: "image",
+            source: { type: "base64", media_type: att.mediaType, data: att.data },
+          });
+        } else {
+          // Non-image files: decode and inline as text
+          const decoded = Buffer.from(att.data, "base64").toString("utf-8");
+          blocks.push({
+            type: "text",
+            text: `[File: ${att.filename}]\n${decoded}`,
+          });
+        }
+      }
+      if (text.trim()) {
+        blocks.push({ type: "text", text });
+      }
+      content = blocks;
+    }
+
     const payload = JSON.stringify({
       type: "user",
-      message: { role: "user", content: text },
+      message: { role: "user", content },
     });
 
     this.proc.stdin.write(payload + "\n");
@@ -394,8 +434,15 @@ interface StreamEventInner {
 }
 
 interface ClaudeStreamEvent {
-  type: "system" | "assistant" | "user" | "result" | "rate_limit_event" | "stream_event" | "control_request";
-  subtype?: "init" | string;
+  type:
+    | "system"
+    | "assistant"
+    | "user"
+    | "result"
+    | "rate_limit_event"
+    | "stream_event"
+    | "control_request";
+  subtype?: string;
   session_id?: string;
   slash_commands?: string[];
   model?: string;
@@ -403,13 +450,16 @@ interface ClaudeStreamEvent {
   contextWindow?: number;
   event?: StreamEventInner;
   result?: string;
-  modelUsage?: Record<string, {
-    inputTokens?: number;
-    outputTokens?: number;
-    cacheReadInputTokens?: number;
-    cacheCreationInputTokens?: number;
-    contextWindow?: number;
-  }>;
+  modelUsage?: Record<
+    string,
+    {
+      inputTokens?: number;
+      outputTokens?: number;
+      cacheReadInputTokens?: number;
+      cacheCreationInputTokens?: number;
+      contextWindow?: number;
+    }
+  >;
   total_cost_usd?: number;
   message?: {
     content: ClaudeContentBlock[];
@@ -444,7 +494,7 @@ interface ClaudeToolUseBlock {
 interface ClaudeToolResultBlock {
   type: "tool_result";
   tool_use_id: string;
-  content: string | unknown;
+  content: unknown;
   is_error?: boolean;
 }
 

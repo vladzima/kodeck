@@ -15,6 +15,7 @@
 ### Task 1.1: Create packages/shared package
 
 **Files:**
+
 - Create: `packages/shared/package.json`
 - Create: `packages/shared/tsconfig.json`
 - Create: `packages/shared/vite.config.ts`
@@ -362,6 +363,7 @@ git commit -m "feat: add shared protocol types package"
 ### Task 2.1: Create apps/server package skeleton
 
 **Files:**
+
 - Create: `apps/server/package.json`
 - Create: `apps/server/tsconfig.json`
 - Create: `apps/server/src/index.ts`
@@ -487,6 +489,7 @@ git commit -m "feat: add server package with WebSocket skeleton"
 ### Task 2.2: Server — project & worktree management
 
 **Files:**
+
 - Create: `apps/server/src/projects.ts`
 - Modify: `apps/server/src/index.ts`
 
@@ -497,18 +500,18 @@ import { execFile } from "node:child_process";
 import { promisify } from "node:util";
 import { basename } from "node:path";
 import { randomUUID } from "node:crypto";
-import type {
-  ProjectConfig,
-  ProjectWithWorktrees,
-  WorktreeInfo,
-} from "@kodeck/shared";
+import type { ProjectConfig, ProjectWithWorktrees, WorktreeInfo } from "@kodeck/shared";
 import { loadConfig, saveConfig } from "./config.ts";
 
 const execFileAsync = promisify(execFile);
 
 export async function listWorktrees(repoPath: string): Promise<WorktreeInfo[]> {
   const { stdout } = await execFileAsync("git", [
-    "-C", repoPath, "worktree", "list", "--porcelain",
+    "-C",
+    repoPath,
+    "worktree",
+    "list",
+    "--porcelain",
   ]);
 
   const worktrees: WorktreeInfo[] = [];
@@ -552,10 +555,7 @@ export async function getProjects(): Promise<ProjectWithWorktrees[]> {
   return results;
 }
 
-export async function addProject(
-  repoPath: string,
-  name?: string,
-): Promise<ProjectConfig> {
+export async function addProject(repoPath: string, name?: string): Promise<ProjectConfig> {
   const config = await loadConfig();
   const project: ProjectConfig = {
     id: randomUUID(),
@@ -579,19 +579,12 @@ export async function createWorktree(
   targetPath?: string,
 ): Promise<WorktreeInfo> {
   const path = targetPath ?? `${repoPath}-${branch}`;
-  await execFileAsync("git", [
-    "-C", repoPath, "worktree", "add", path, "-b", branch,
-  ]);
+  await execFileAsync("git", ["-C", repoPath, "worktree", "add", path, "-b", branch]);
   return { path, branch, isMain: false };
 }
 
-export async function removeWorktree(
-  repoPath: string,
-  worktreePath: string,
-): Promise<void> {
-  await execFileAsync("git", [
-    "-C", repoPath, "worktree", "remove", worktreePath,
-  ]);
+export async function removeWorktree(repoPath: string, worktreePath: string): Promise<void> {
+  await execFileAsync("git", ["-C", repoPath, "worktree", "remove", worktreePath]);
 }
 ```
 
@@ -605,6 +598,7 @@ git commit -m "feat: add project and worktree management"
 ### Task 2.3: Server — Claude Code session manager
 
 **Files:**
+
 - Create: `apps/server/src/claude-session.ts`
 
 **Step 1: Create src/claude-session.ts**
@@ -653,15 +647,15 @@ export class ClaudeSession extends EventEmitter<ClaudeSessionEvents> {
   }
 
   start(): void {
-    this.process = spawn("claude", [
-      "--output-format", "stream-json",
-      "--input-format", "stream-json",
-      "--verbose",
-    ], {
-      cwd: this.info.worktreePath,
-      stdio: ["pipe", "pipe", "pipe"],
-      env: { ...process.env },
-    });
+    this.process = spawn(
+      "claude",
+      ["--output-format", "stream-json", "--input-format", "stream-json", "--verbose"],
+      {
+        cwd: this.info.worktreePath,
+        stdio: ["pipe", "pipe", "pipe"],
+        env: { ...process.env },
+      },
+    );
 
     const rl = createInterface({ input: this.process.stdout! });
     rl.on("line", (line) => this.handleLine(line));
@@ -812,6 +806,7 @@ git commit -m "feat: add Claude Code session manager with stream-json parsing"
 ### Task 2.4: Server — terminal session manager
 
 **Files:**
+
 - Create: `apps/server/src/terminal-session.ts`
 
 **Step 1: Create src/terminal-session.ts**
@@ -911,6 +906,7 @@ git commit -m "feat: add terminal session manager with PTY and output batching"
 ### Task 2.5: Server — WebSocket message router
 
 **Files:**
+
 - Modify: `apps/server/src/index.ts`
 - Create: `apps/server/src/router.ts`
 
@@ -937,10 +933,7 @@ function send(ws: WebSocket, msg: ServerMessage): void {
   }
 }
 
-export async function handleMessage(
-  ws: WebSocket,
-  raw: string,
-): Promise<void> {
+export async function handleMessage(ws: WebSocket, raw: string): Promise<void> {
   let msg: ClientMessage;
   try {
     msg = JSON.parse(raw) as ClientMessage;
@@ -1008,7 +1001,13 @@ async function handleSessionCreate(
       send(ws, { type: "chat.tool_call", sessionId: session.info.id, toolCall, messageId });
     });
     session.on("tool_result", (toolUseId, result, isError) => {
-      send(ws, { type: "chat.tool_result", sessionId: session.info.id, toolUseId, result, isError });
+      send(ws, {
+        type: "chat.tool_result",
+        sessionId: session.info.id,
+        toolUseId,
+        result,
+        isError,
+      });
     });
     session.on("state", (state) => {
       send(ws, { type: "chat.state", sessionId: session.info.id, state });
@@ -1053,11 +1052,7 @@ function handleSessionClose(ws: WebSocket, sessionId: string): void {
   }
 }
 
-function handleChatSend(
-  ws: WebSocket,
-  sessionId: string,
-  text: string,
-): void {
+function handleChatSend(ws: WebSocket, sessionId: string, text: string): void {
   const session = sessions.get(sessionId);
   if (session instanceof ClaudeSession) {
     session.send(text);
@@ -1080,30 +1075,19 @@ function handleTerminalInput(sessionId: string, data: string): void {
   }
 }
 
-function handleTerminalResize(
-  sessionId: string,
-  cols: number,
-  rows: number,
-): void {
+function handleTerminalResize(sessionId: string, cols: number, rows: number): void {
   const session = sessions.get(sessionId);
   if (session instanceof TerminalSession) {
     session.resize(cols, rows);
   }
 }
 
-async function handleProjectAdd(
-  ws: WebSocket,
-  repoPath: string,
-  name?: string,
-): Promise<void> {
+async function handleProjectAdd(ws: WebSocket, repoPath: string, name?: string): Promise<void> {
   await addProject(repoPath, name);
   await handleProjectList(ws);
 }
 
-async function handleProjectRemove(
-  ws: WebSocket,
-  projectId: string,
-): Promise<void> {
+async function handleProjectRemove(ws: WebSocket, projectId: string): Promise<void> {
   await removeProject(projectId);
   await handleProjectList(ws);
 }
@@ -1198,6 +1182,7 @@ git commit -m "feat: add WebSocket message router wiring sessions to handlers"
 ### Task 3.1: Convert client to React
 
 **Files:**
+
 - Modify: `apps/client/package.json` — add react, react-dom, zustand, @xterm/xterm, @xterm/addon-fit
 - Modify: `apps/client/tsconfig.json` — add jsx config
 - Modify: `apps/client/vite.config.ts` — add react plugin
@@ -1211,6 +1196,7 @@ git commit -m "feat: add WebSocket message router wiring sessions to handlers"
 **Step 1: Add dependencies**
 
 Run:
+
 ```bash
 cd /Users/vladvarbatov/Projects/kodeck
 vp add -F client react react-dom zustand @xterm/xterm @xterm/addon-fit @xterm/addon-webgl
@@ -1220,6 +1206,7 @@ vp add -F client -D @types/react @types/react-dom @vitejs/plugin-react
 **Step 2: Update tsconfig.json — add JSX support**
 
 Add to compilerOptions:
+
 ```json
 "jsx": "react-jsx"
 ```
@@ -1284,12 +1271,8 @@ export function App() {
         Sidebar
       </div>
       <div className="flex flex-1 flex-col">
-        <div className="h-10 border-b border-border px-2 flex items-center gap-1">
-          Tabs
-        </div>
-        <div className="flex-1 overflow-hidden">
-          Main
-        </div>
+        <div className="h-10 border-b border-border px-2 flex items-center gap-1">Tabs</div>
+        <div className="flex-1 overflow-hidden">Main</div>
       </div>
     </div>
   );
@@ -1314,6 +1297,7 @@ git commit -m "feat: convert client to React with IDE shell layout"
 ### Task 3.2: Client — Zustand store
 
 **Files:**
+
 - Create: `apps/client/src/store.ts`
 
 **Step 1: Create the store**
@@ -1363,7 +1347,12 @@ interface AppState {
   appendToolCall: (
     sessionId: string,
     messageId: string,
-    toolCall: { id: string; name: string; input: Record<string, unknown>; status: "running" | "done" | "error" },
+    toolCall: {
+      id: string;
+      name: string;
+      input: Record<string, unknown>;
+      status: "running" | "done" | "error";
+    },
   ) => void;
   updateToolResult: (
     sessionId: string,
@@ -1475,7 +1464,7 @@ export const useAppStore = create<AppState>((set, get) => ({
         if (msg.role !== "assistant") return msg;
         const toolCalls = msg.toolCalls.map((tc) =>
           tc.id === toolUseId
-            ? { ...tc, result, isError, status: isError ? "error" as const : "done" as const }
+            ? { ...tc, result, isError, status: isError ? ("error" as const) : ("done" as const) }
             : tc,
         );
         return { ...msg, toolCalls };
@@ -1517,9 +1506,7 @@ export const useAppStore = create<AppState>((set, get) => ({
       if (!data) return s;
 
       const messages = data.messages.map((msg) =>
-        msg.role === "assistant" && msg.isStreaming
-          ? { ...msg, isStreaming: false }
-          : msg,
+        msg.role === "assistant" && msg.isStreaming ? { ...msg, isStreaming: false } : msg,
       );
 
       chatData.set(sessionId, { ...data, messages, state: "idle" });
@@ -1538,6 +1525,7 @@ git commit -m "feat: add Zustand store for app state management"
 ### Task 3.3: Client — WebSocket connection hook
 
 **Files:**
+
 - Create: `apps/client/src/hooks/use-websocket.ts`
 
 **Step 1: Create the WebSocket hook**
@@ -1676,11 +1664,13 @@ git commit -m "feat: add WebSocket connection hook with auto-reconnect"
 ### Task 4.1: Sidebar — project tree
 
 **Files:**
+
 - Create: `apps/client/src/components/sidebar.tsx`
 
 **Step 1: Install shadcn components needed**
 
 Run:
+
 ```bash
 cd /Users/vladvarbatov/Projects/kodeck/apps/client
 vp dlx shadcn@latest add button scroll-area separator tooltip
@@ -1690,13 +1680,7 @@ vp dlx shadcn@latest add button scroll-area separator tooltip
 
 ```tsx
 import { useState } from "react";
-import {
-  ChevronRight,
-  ChevronDown,
-  GitBranch,
-  FolderGit2,
-  Plus,
-} from "lucide-react";
+import { ChevronRight, ChevronDown, GitBranch, FolderGit2, Plus } from "lucide-react";
 import type { ProjectWithWorktrees, WorktreeInfo } from "@kodeck/shared";
 import { useAppStore } from "../store.ts";
 import { sendMessage } from "../hooks/use-websocket.ts";
@@ -1776,9 +1760,7 @@ export function Sidebar() {
   return (
     <div className="flex h-full w-60 flex-col border-r border-border bg-sidebar">
       <div className="flex items-center justify-between border-b border-sidebar-border px-3 py-2">
-        <span className="text-sm font-semibold text-sidebar-foreground">
-          Projects
-        </span>
+        <span className="text-sm font-semibold text-sidebar-foreground">Projects</span>
       </div>
       <ScrollArea className="flex-1 px-2 py-2">
         <div className="flex flex-col gap-1">
@@ -1813,6 +1795,7 @@ git commit -m "feat: add sidebar component with project/worktree tree view"
 ### Task 4.2: Tab bar
 
 **Files:**
+
 - Create: `apps/client/src/components/tab-bar.tsx`
 
 **Step 1: Create tab bar component**
@@ -1824,16 +1807,9 @@ import { sendMessage } from "../hooks/use-websocket.ts";
 import { Button } from "./ui/button.tsx";
 
 export function TabBar() {
-  const {
-    sessions,
-    activeSessionId,
-    setActiveSession,
-    selectedWorktreePath,
-  } = useAppStore();
+  const { sessions, activeSessionId, setActiveSession, selectedWorktreePath } = useAppStore();
 
-  const worktreeSessions = sessions.filter(
-    (s) => s.worktreePath === selectedWorktreePath,
-  );
+  const worktreeSessions = sessions.filter((s) => s.worktreePath === selectedWorktreePath);
 
   const handleNewSession = (type: "chat" | "terminal") => {
     if (!selectedWorktreePath) return;
@@ -1845,10 +1821,7 @@ export function TabBar() {
     });
   };
 
-  const handleCloseSession = (
-    e: React.MouseEvent,
-    sessionId: string,
-  ) => {
+  const handleCloseSession = (e: React.MouseEvent, sessionId: string) => {
     e.stopPropagation();
     sendMessage({ type: "session.close", sessionId });
   };
@@ -1916,6 +1889,7 @@ git commit -m "feat: add tab bar with session tabs and new session buttons"
 ### Task 4.3: Chat message components
 
 **Files:**
+
 - Create: `apps/client/src/components/chat/message-list.tsx`
 - Create: `apps/client/src/components/chat/user-message.tsx`
 - Create: `apps/client/src/components/chat/assistant-message.tsx`
@@ -1973,19 +1947,11 @@ function toolSummary(tool: ToolCallInfo): string {
   return tool.name;
 }
 
-export const ToolCallCard = memo(function ToolCallCard({
-  toolCall,
-}: {
-  toolCall: ToolCallInfo;
-}) {
+export const ToolCallCard = memo(function ToolCallCard({ toolCall }: { toolCall: ToolCallInfo }) {
   const [expanded, setExpanded] = useState(false);
   const Icon = TOOL_ICONS[toolCall.name] ?? FileText;
   const StatusIcon =
-    toolCall.status === "running"
-      ? Loader2
-      : toolCall.status === "error"
-        ? XCircle
-        : Check;
+    toolCall.status === "running" ? Loader2 : toolCall.status === "error" ? XCircle : Check;
 
   return (
     <div className="rounded-md border border-border bg-card text-card-foreground">
@@ -2000,9 +1966,7 @@ export const ToolCallCard = memo(function ToolCallCard({
           <ChevronRight className="h-3.5 w-3.5 shrink-0 text-muted-foreground" />
         )}
         <Icon className="h-3.5 w-3.5 shrink-0 text-muted-foreground" />
-        <span className="flex-1 truncate font-mono text-xs">
-          {toolSummary(toolCall)}
-        </span>
+        <span className="flex-1 truncate font-mono text-xs">{toolSummary(toolCall)}</span>
         <StatusIcon
           className={`h-3.5 w-3.5 shrink-0 ${
             toolCall.status === "running"
@@ -2031,11 +1995,7 @@ export const ToolCallCard = memo(function ToolCallCard({
 import type { ChatAssistantMessage } from "@kodeck/shared";
 import { ToolCallCard } from "./tool-call-card.tsx";
 
-export function AssistantMessage({
-  message,
-}: {
-  message: ChatAssistantMessage;
-}) {
+export function AssistantMessage({ message }: { message: ChatAssistantMessage }) {
   return (
     <div className="flex flex-col gap-2">
       {message.text && (
@@ -2082,11 +2042,7 @@ export function MessageList({ messages }: { messages: ChatMessage[] }) {
   }, [messages, autoScroll]);
 
   return (
-    <div
-      ref={containerRef}
-      className="flex-1 overflow-y-auto px-4 py-4"
-      onScroll={handleScroll}
-    >
+    <div ref={containerRef} className="flex-1 overflow-y-auto px-4 py-4" onScroll={handleScroll}>
       <div className="mx-auto flex max-w-3xl flex-col gap-4">
         {messages.map((msg, i) =>
           msg.role === "user" ? (
@@ -2112,6 +2068,7 @@ git commit -m "feat: add chat message components with tool call cards"
 ### Task 4.4: Chat input area with keybindings
 
 **Files:**
+
 - Create: `apps/client/src/components/chat/chat-input.tsx`
 
 **Step 1: Create chat input with Claude Code keybindings**
@@ -2129,12 +2086,7 @@ interface ChatInputProps {
   inputHistory: string[];
 }
 
-export function ChatInput({
-  onSend,
-  onInterrupt,
-  state,
-  inputHistory,
-}: ChatInputProps) {
+export function ChatInput({ onSend, onInterrupt, state, inputHistory }: ChatInputProps) {
   const [text, setText] = useState("");
   const textareaRef = useRef<HTMLTextAreaElement>(null);
   const historyIndex = useRef(-1);
@@ -2194,11 +2146,7 @@ export function ChatInput({
           e.preventDefault();
           const newIndex = historyIndex.current - 1;
           historyIndex.current = newIndex;
-          setText(
-            newIndex >= 0
-              ? (inputHistory[inputHistory.length - 1 - newIndex] ?? "")
-              : "",
-          );
+          setText(newIndex >= 0 ? (inputHistory[inputHistory.length - 1 - newIndex] ?? "") : "");
         }
       }
     },
@@ -2236,12 +2184,7 @@ export function ChatInput({
             <Square className="h-4 w-4" />
           </Button>
         ) : (
-          <Button
-            size="icon"
-            className="h-9 w-9 shrink-0"
-            onClick={send}
-            disabled={!text.trim()}
-          >
+          <Button size="icon" className="h-9 w-9 shrink-0" onClick={send} disabled={!text.trim()}>
             <Send className="h-4 w-4" />
           </Button>
         )}
@@ -2270,6 +2213,7 @@ git commit -m "feat: add chat input with Claude Code keybindings"
 ### Task 4.5: Chat session view (composite)
 
 **Files:**
+
 - Create: `apps/client/src/components/chat/chat-view.tsx`
 
 **Step 1: Create the composite chat view**
@@ -2319,6 +2263,7 @@ git commit -m "feat: add composite chat view component"
 ### Task 4.6: Terminal view
 
 **Files:**
+
 - Create: `apps/client/src/components/terminal/terminal-view.tsx`
 
 **Step 1: Create terminal component wrapping xterm.js**
@@ -2453,6 +2398,7 @@ git commit -m "feat: add terminal view with xterm.js, WebGL, and fit addon"
 ### Task 4.7: Main panel — session router
 
 **Files:**
+
 - Create: `apps/client/src/components/main-panel.tsx`
 
 **Step 1: Create main panel that routes to chat or terminal view**
@@ -2465,9 +2411,7 @@ import { TerminalView } from "./terminal/terminal-view.tsx";
 export function MainPanel() {
   const { sessions, activeSessionId, selectedWorktreePath } = useAppStore();
 
-  const worktreeSessions = sessions.filter(
-    (s) => s.worktreePath === selectedWorktreePath,
-  );
+  const worktreeSessions = sessions.filter((s) => s.worktreePath === selectedWorktreePath);
 
   if (!selectedWorktreePath) {
     return (
@@ -2480,9 +2424,7 @@ export function MainPanel() {
   if (worktreeSessions.length === 0) {
     return (
       <div className="flex h-full items-center justify-center text-muted-foreground">
-        <p className="text-sm">
-          Open a new chat or terminal session using the + buttons above
-        </p>
+        <p className="text-sm">Open a new chat or terminal session using the + buttons above</p>
       </div>
     );
   }
@@ -2502,13 +2444,7 @@ export function MainPanel() {
             </div>
           );
         }
-        return (
-          <TerminalView
-            key={session.id}
-            sessionId={session.id}
-            isActive={isActive}
-          />
-        );
+        return <TerminalView key={session.id} sessionId={session.id} isActive={isActive} />;
       })}
     </div>
   );
@@ -2525,6 +2461,7 @@ git commit -m "feat: add main panel routing between chat and terminal views"
 ### Task 4.8: Wire up App component
 
 **Files:**
+
 - Modify: `apps/client/src/app.tsx`
 
 **Step 1: Update app.tsx to use all components**
@@ -2577,6 +2514,7 @@ git commit -m "feat: wire up App with sidebar, tab bar, main panel, and connecti
 ### Task 5.1: Add dev script to run both client and server
 
 **Files:**
+
 - Modify: `package.json` (root)
 
 **Step 1: Update root dev script**
@@ -2597,6 +2535,7 @@ Add a `dev` script that runs both server and client. Since the root package.json
 Also add a `dev` script to the server's `package.json` and add a `concurrently` or similar approach. Alternatively, the simplest approach: open two terminals — one for server, one for client.
 
 For a cleaner DX, update `apps/server/package.json`:
+
 ```json
 "scripts": {
   "dev": "node --watch --import tsx/esm src/index.ts"
@@ -2638,15 +2577,18 @@ git commit -m "fix: resolve lint and type errors"
 ## Dependency Summary
 
 ### packages/shared
+
 - No runtime dependencies (types only)
 
 ### apps/server
+
 - `ws` — WebSocket server
 - `node-pty` — PTY management
 - `tsx` — dev-time TypeScript execution
 - `@kodeck/shared` — protocol types
 
 ### apps/client
+
 - `react`, `react-dom` — UI framework
 - `zustand` — state management
 - `@xterm/xterm`, `@xterm/addon-fit`, `@xterm/addon-webgl` — terminal

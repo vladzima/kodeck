@@ -24,14 +24,16 @@ interface SessionsData {
 let writeQueue: Promise<void> = Promise.resolve();
 
 function enqueue(fn: (sessions: PersistedSession[]) => PersistedSession[] | void): Promise<void> {
-  writeQueue = writeQueue.then(async () => {
-    const sessions = await loadFromDisk();
-    const result = fn(sessions);
-    const toSave = result ?? sessions;
-    await saveToDisk(toSave);
-  }).catch((err) => {
-    console.error("[session-store] write error:", err);
-  });
+  writeQueue = writeQueue
+    .then(async () => {
+      const sessions = await loadFromDisk();
+      const result = fn(sessions);
+      const toSave = result ?? sessions;
+      await saveToDisk(toSave);
+    })
+    .catch((err) => {
+      console.error("[session-store] write error:", err);
+    });
   return writeQueue;
 }
 
@@ -81,14 +83,20 @@ export async function updateSessionName(sessionId: string, name: string): Promis
   });
 }
 
-export async function updateSessionMessages(sessionId: string, messages: ChatMessage[]): Promise<void> {
+export async function updateSessionMessages(
+  sessionId: string,
+  messages: ChatMessage[],
+): Promise<void> {
   return enqueue((sessions) => {
     const session = sessions.find((s) => s.info.id === sessionId);
     if (session) session.messages = messages;
   });
 }
 
-export async function updateSessionSlashCommands(sessionId: string, commands: string[]): Promise<void> {
+export async function updateSessionSlashCommands(
+  sessionId: string,
+  commands: string[],
+): Promise<void> {
   return enqueue((sessions) => {
     const session = sessions.find((s) => s.info.id === sessionId);
     if (session) session.slashCommands = commands;
