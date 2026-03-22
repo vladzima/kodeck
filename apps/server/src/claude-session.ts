@@ -233,16 +233,10 @@ export class ClaudeSession extends EventEmitter<ClaudeSessionEvents> {
 
       case "result": {
         if (!this.userHasSentMessage) break; // suppress replayed result on resume
-        // Log result event keys for debugging (temporary)
+        // For compaction, synthesize a confirmation message (no assistant text is emitted)
         if (this.lastUserMessageWasCompact) {
-          console.log("[compact] result event keys:", Object.keys(event), JSON.stringify(event).slice(0, 500));
-        }
-        // If the result event carries a text summary (e.g. compaction), emit it as assistant text
-        if (event.result && typeof event.result === "string") {
-          this.emit("text", event.result, this.currentMessageId);
-        } else if (this.lastUserMessageWasCompact) {
-          // Compaction doesn't produce assistant text — synthesize a confirmation
-          this.emit("text", "Conversation compacted.", this.currentMessageId);
+          const summary = (event.result && typeof event.result === "string") ? event.result : "Conversation compacted.";
+          this.emit("text", summary, this.currentMessageId);
         }
         this.setState("idle");
         this.activeToolCalls.clear();

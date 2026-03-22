@@ -204,9 +204,9 @@ function wireClaudeSession(ws: WebSocket, sessionId: string, session: ClaudeSess
     send(ws, { type: "chat.error", sessionId, error });
   });
   session.on("exit", () => {
-    // Don't delete from sessions map — keep the entry so session.close can still
-    // kill the process if the user closes the tab. Lazy respawn will replace it.
-    // Just reset state to idle so the UI knows Claude stopped.
+    sessions.delete(sessionId);
+    // Don't send session.closed — the session info remains in sessionInfos
+    // so it can be lazy-respawned on next message. Just reset state to idle.
     send(ws, { type: "chat.state", sessionId, state: "idle" });
   });
 }
