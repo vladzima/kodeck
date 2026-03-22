@@ -19,14 +19,19 @@ export const TerminalView = memo(function TerminalView({
   useEffect(() => {
     if (!containerRef.current) return;
 
+    // Read resolved CSS colors so terminal matches the app theme
+    const bodyStyles = getComputedStyle(document.body);
+    const bg = bodyStyles.backgroundColor;
+    const fg = bodyStyles.color;
+
     const terminal = new Terminal({
       fontSize: 14,
       fontFamily:
         "'Geist Mono Variable', 'GeistMono', ui-monospace, monospace",
       theme: {
-        background: "#16171d",
-        foreground: "#e4e4e7",
-        cursor: "#e4e4e7",
+        background: bg,
+        foreground: fg,
+        cursor: fg,
         selectionBackground: "rgba(255,255,255,0.2)",
       },
       cursorBlink: true,
