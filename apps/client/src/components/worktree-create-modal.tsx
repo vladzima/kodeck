@@ -1,4 +1,4 @@
-import { useState, useEffect } from "react";
+import { useState, useEffect, useRef } from "react";
 import type { PRSearchResult } from "@kodeck/shared";
 import { useAppStore } from "../store.ts";
 import { sendMessage } from "../hooks/use-websocket.ts";
@@ -57,9 +57,10 @@ export function WorktreeCreateModal() {
   const [isCreating, setIsCreating] = useState(false);
   const [createError, setCreateError] = useState<string | null>(null);
 
-  // Reset state when modal opens
+  // Reset state when modal opens (only on open transition, not on project/store updates)
+  const prevOpen = useRef(false);
   useEffect(() => {
-    if (open) {
+    if (open && !prevOpen.current) {
       setActiveTab("new-branch");
       setBranchName("");
       setBaseBranch(project?.worktrees.find((w) => w.isMain)?.branch ?? "main");
@@ -77,7 +78,8 @@ export function WorktreeCreateModal() {
       setPRSearchResults([]);
       setScannedCopyPaths([]);
     }
-  }, [open, project, selectedWorktreePath]);
+    prevOpen.current = open;
+  }, [open]);
 
   // Watch for operation result to close modal or show error
   useEffect(() => {
