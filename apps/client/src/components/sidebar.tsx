@@ -73,20 +73,28 @@ function WorktreeItem({
       onMouseLeave={() => setHovered(false)}
     >
       {/* Line 1: Branch + sync indicators */}
-      <div className="flex w-full items-center gap-1.5">
+      <div className={`flex w-full items-center gap-1.5 ${hovered ? "invisible" : ""}`}>
         <GitBranch className="h-3.5 w-3.5 shrink-0" />
         <span className="min-w-0 flex-1 truncate">{worktree.branch}</span>
-        {!hovered && hasAhead && (
+        {hasAhead && (
           <span className="flex shrink-0 items-center gap-1 text-[11px]">
             <span className="text-green-400">↑{worktree.ahead}</span>
           </span>
         )}
       </div>
 
-      {/* Line 2: PR metadata */}
-      {!hovered && hasPr && worktree.pr && (
-        <div className="flex w-full items-center gap-0 pl-[20px] text-[11px] text-muted-foreground/50">
+      {/* Line 2: PR metadata — always rendered to keep height stable */}
+      {hasPr && worktree.pr && (
+        <div className={`flex w-full items-center gap-0 pl-[20px] text-[11px] text-muted-foreground/50 ${hovered ? "invisible" : ""}`}>
           <span>#{worktree.pr.number}</span>
+          {worktree.pr.status !== "open" && (
+            <>
+              <span className="mx-1">·</span>
+              <span className={worktree.pr.status === "merged" ? "text-purple-400" : "text-muted-foreground/40"}>
+                {worktree.pr.status}
+              </span>
+            </>
+          )}
           {worktree.pr.ciStatus && (
             <>
               <span className="mx-1">·</span>
