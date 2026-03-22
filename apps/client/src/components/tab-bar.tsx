@@ -79,7 +79,7 @@ export function TabBar() {
           )}
           <button
             type="button"
-            className="rounded-sm p-0.5 text-muted-foreground/50 transition-colors hover:bg-foreground/10 hover:text-foreground"
+            className="cursor-pointer rounded-sm p-0.5 text-muted-foreground/50 transition-colors hover:bg-foreground/10 hover:text-foreground"
             onClick={(e) => handleCloseSession(e, session.id)}
           >
             <X className="h-3 w-3" />
