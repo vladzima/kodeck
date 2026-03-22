@@ -1,15 +1,20 @@
 import { create } from "zustand";
 import type {
+  BranchInfo,
+  ChatAttachment,
   ChatAssistantMessage,
   ChatMessage,
   ChatSessionState,
   ChatUserMessage,
   ClaudeProcessInfo,
+  EffortLevel,
+  PRSearchResult,
   PermissionRequest,
   ProjectWithWorktrees,
   SessionInfo,
   SessionMeta,
   ToolCallInfo,
+  WorktreeInfo,
 } from "@kodeck/shared";
 
 export interface ChatSessionData {
@@ -39,16 +44,29 @@ interface AppState {
   renameSession: (sessionId: string, name: string) => void;
   setActiveSession: (sessionId: string | null) => void;
   setSessionModel: (sessionId: string, model: string) => void;
+  setSessionEffort: (sessionId: string, effort: EffortLevel) => void;
   setSessionSkipPermissions: (sessionId: string, skip: boolean) => void;
   setSessionStreaming: (sessionId: string, streaming: boolean) => void;
-  loadSessions: (sessions: SessionInfo[], chatHistories: Record<string, ChatMessage[]>, slashCommands?: Record<string, string[]>, metas?: Record<string, SessionMeta>) => void;
+  loadSessions: (
+    sessions: SessionInfo[],
+    chatHistories: Record<string, ChatMessage[]>,
+    slashCommands?: Record<string, string[]>,
+    metas?: Record<string, SessionMeta>,
+    sessionStates?: Record<string, ChatSessionState>,
+    pendingPermissions?: Record<string, PermissionRequest>,
+  ) => void;
 
   // Chat data
   chatData: Map<string, ChatSessionData>;
   appendChatText: (sessionId: string, messageId: string, text: string) => void;
   appendToolCall: (sessionId: string, messageId: string, toolCall: ToolCallInfo) => void;
-  updateToolResult: (sessionId: string, toolUseId: string, result: string, isError: boolean) => void;
-  addUserMessage: (sessionId: string, text: string) => void;
+  updateToolResult: (
+    sessionId: string,
+    toolUseId: string,
+    result: string,
+    isError: boolean,
+  ) => void;
+  addUserMessage: (sessionId: string, text: string, attachments?: ChatAttachment[]) => void;
   setChatState: (sessionId: string, state: ChatSessionState) => void;
   finishAssistantMessage: (sessionId: string, messageId: string) => void;
 
@@ -75,9 +93,27 @@ interface AppState {
   setDebugMode: (on: boolean) => void;
   debugProcesses: ClaudeProcessInfo[];
   setDebugProcesses: (processes: ClaudeProcessInfo[]) => void;
+
+  // Worktree creation modal
+  branches: BranchInfo[];
+  setBranches: (branches: BranchInfo[]) => void;
+  prSearchResults: PRSearchResult[];
+  setPRSearchResults: (prs: PRSearchResult[]) => void;
+  scannedCopyPaths: string[];
+  setScannedCopyPaths: (paths: string[]) => void;
+  worktreeCreateModalOpen: boolean;
+  setWorktreeCreateModalOpen: (open: boolean) => void;
+  worktreeCreateProjectId: string | null;
+  setWorktreeCreateProjectId: (id: string | null) => void;
+
+  // Worktree status updates
+  updateWorktreeStatus: (projectId: string, worktrees: WorktreeInfo[]) => void;
 }
 
-function getOrCreateChatData(chatData: Map<string, ChatSessionData>, sessionId: string): ChatSessionData {
+function getOrCreateChatData(
+  chatData: Map<string, ChatSessionData>,
+  sessionId: string,
+): ChatSessionData {
   const existing = chatData.get(sessionId);
   if (existing) return existing;
   return { messages: [], state: "idle", inputHistory: [] };
@@ -119,16 +155,16 @@ export const useAppStore = create<AppState>((set) => ({
     }),
   renameSession: (sessionId, name) =>
     set((state) => ({
-      sessions: state.sessions.map((s) =>
-        s.id === sessionId ? { ...s, name } : s,
-      ),
+      sessions: state.sessions.map((s) => (s.id === sessionId ? { ...s, name } : s)),
     })),
   setActiveSession: (sessionId) => set({ activeSessionId: sessionId }),
   setSessionModel: (sessionId, model) =>
     set((state) => ({
-      sessions: state.sessions.map((s) =>
-        s.id === sessionId ? { ...s, model } : s,
-      ),
+      sessions: state.sessions.map((s) => (s.id === sessionId ? { ...s, model } : s)),
+    })),
+  setSessionEffort: (sessionId, effort) =>
+    set((state) => ({
+      sessions: state.sessions.map((s) => (s.id === sessionId ? { ...s, effort } : s)),
     })),
   setSessionSkipPermissions: (sessionId, skip) =>
     set((state) => ({
@@ -138,18 +174,23 @@ export const useAppStore = create<AppState>((set) => ({
     })),
   setSessionStreaming: (sessionId, streaming) =>
     set((state) => ({
-      sessions: state.sessions.map((s) =>
-        s.id === sessionId ? { ...s, streaming } : s,
-      ),
+      sessions: state.sessions.map((s) => (s.id === sessionId ? { ...s, streaming } : s)),
     })),
 
-  loadSessions: (sessions, chatHistories, restoredSlashCommands, restoredMetas) =>
+  loadSessions: (
+    sessions,
+    chatHistories,
+    restoredSlashCommands,
+    restoredMetas,
+    sessionStates,
+    restoredPermissions,
+  ) =>
     set((state) => {
       const chatData = new Map(state.chatData);
       for (const [sessionId, messages] of Object.entries(chatHistories)) {
         chatData.set(sessionId, {
           messages,
-          state: "idle",
+          state: sessionStates?.[sessionId] ?? "idle",
           inputHistory: messages
             .filter((m): m is ChatUserMessage => m.role === "user")
             .map((m) => m.content),
@@ -167,10 +208,25 @@ export const useAppStore = create<AppState>((set) => ({
           sessionMeta.set(sessionId, meta);
         }
       }
+      const pendingPermission = new Map(state.pendingPermission);
+      if (restoredPermissions) {
+        for (const [sessionId, perm] of Object.entries(restoredPermissions)) {
+          pendingPermission.set(sessionId, perm);
+        }
+      }
       const activeSessionId = state.activeSessionId ?? sessions[0]?.id ?? null;
       const activeSession = sessions.find((s) => s.id === activeSessionId);
-      const selectedWorktreePath = state.selectedWorktreePath ?? activeSession?.worktreePath ?? null;
-      return { sessions, chatData, slashCommands, sessionMeta, activeSessionId, selectedWorktreePath };
+      const selectedWorktreePath =
+        state.selectedWorktreePath ?? activeSession?.worktreePath ?? null;
+      return {
+        sessions,
+        chatData,
+        slashCommands,
+        sessionMeta,
+        pendingPermission,
+        activeSessionId,
+        selectedWorktreePath,
+      };
     }),
 
   // Chat data
@@ -223,7 +279,9 @@ export const useAppStore = create<AppState>((set) => ({
           const updated = [...last.toolCalls];
           updated[existingIdx] = { ...updated[existingIdx], input: toolCall.input };
           // Update the matching block too
-          const blockIdx = blocks.findIndex((b) => b.type === "tool_call" && b.toolCall.id === toolCall.id);
+          const blockIdx = blocks.findIndex(
+            (b) => b.type === "tool_call" && b.toolCall.id === toolCall.id,
+          );
           if (blockIdx >= 0) {
             blocks[blockIdx] = { type: "tool_call", toolCall: updated[existingIdx] };
           }
@@ -261,14 +319,22 @@ export const useAppStore = create<AppState>((set) => ({
         if (msg.role !== "assistant") return msg;
         const updatedToolCalls = msg.toolCalls.map((tc) =>
           tc.id === toolUseId
-            ? { ...tc, result, isError, status: isError ? "error" as const : "done" as const }
+            ? { ...tc, result, isError, status: isError ? ("error" as const) : ("done" as const) }
             : tc,
         );
         if (updatedToolCalls === msg.toolCalls) return msg;
         // Also update contentBlocks
         const updatedBlocks = msg.contentBlocks.map((block) => {
           if (block.type !== "tool_call" || block.toolCall.id !== toolUseId) return block;
-          return { ...block, toolCall: { ...block.toolCall, result, isError, status: isError ? "error" as const : "done" as const } };
+          return {
+            ...block,
+            toolCall: {
+              ...block.toolCall,
+              result,
+              isError,
+              status: isError ? ("error" as const) : ("done" as const),
+            },
+          };
         });
         return { ...msg, toolCalls: updatedToolCalls, contentBlocks: updatedBlocks };
       });
@@ -277,14 +343,13 @@ export const useAppStore = create<AppState>((set) => ({
       return { chatData };
     }),
 
-  addUserMessage: (sessionId, text) =>
+  addUserMessage: (sessionId, text, attachments) =>
     set((state) => {
       const chatData = new Map(state.chatData);
       const data = getOrCreateChatData(chatData, sessionId);
-      const messages: ChatMessage[] = [
-        ...data.messages,
-        { role: "user", content: text, timestamp: Date.now() },
-      ];
+      const userMsg: ChatUserMessage = { role: "user", content: text, timestamp: Date.now() };
+      if (attachments?.length) userMsg.attachments = attachments;
+      const messages: ChatMessage[] = [...data.messages, userMsg];
       const inputHistory = [...data.inputHistory, text];
 
       chatData.set(sessionId, { ...data, messages, inputHistory, state: "streaming" });
@@ -368,4 +433,24 @@ export const useAppStore = create<AppState>((set) => ({
   setDebugMode: (on) => set({ debugMode: on }),
   debugProcesses: [],
   setDebugProcesses: (processes) => set({ debugProcesses: processes }),
+
+  // Worktree creation modal
+  branches: [],
+  setBranches: (branches) => set({ branches }),
+  prSearchResults: [],
+  setPRSearchResults: (prs) => set({ prSearchResults: prs }),
+  scannedCopyPaths: [],
+  setScannedCopyPaths: (paths) => set({ scannedCopyPaths: paths }),
+  worktreeCreateModalOpen: false,
+  setWorktreeCreateModalOpen: (open) => set({ worktreeCreateModalOpen: open }),
+  worktreeCreateProjectId: null,
+  setWorktreeCreateProjectId: (id) => set({ worktreeCreateProjectId: id }),
+
+  // Worktree status updates
+  updateWorktreeStatus: (projectId, worktrees) =>
+    set((state) => ({
+      projects: state.projects.map((p) =>
+        p.id === projectId ? { ...p, worktrees } : p,
+      ),
+    })),
 }));
