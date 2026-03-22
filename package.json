@@ -5,7 +5,7 @@
   "type": "module",
   "scripts": {
     "ready": "vp fmt && vp lint && vp run test -r && vp run build -r",
-    "dev": "vp run dev"
+    "dev": "vp run client#dev server#dev"
   },
   "devDependencies": {
     "vite-plus": "catalog:"
