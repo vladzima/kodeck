@@ -86,7 +86,14 @@ function handleServerMessage(msg: ServerMessage): void {
 
     case "session.list":
       console.log(`[kodeck] Loaded ${msg.sessions.length} sessions from server`);
-      state.loadSessions(msg.sessions, msg.chatHistories, msg.slashCommands, msg.sessionMetas);
+      state.loadSessions(
+        msg.sessions,
+        msg.chatHistories,
+        msg.slashCommands,
+        msg.sessionMetas,
+        msg.sessionStates,
+        msg.pendingPermissions,
+      );
       break;
 
     case "dialog.folderPicked":
@@ -97,6 +104,28 @@ function handleServerMessage(msg: ServerMessage): void {
 
     case "debug.processList":
       state.setDebugProcesses(msg.processes);
+      break;
+
+    case "worktree.status":
+      state.updateWorktreeStatus(msg.projectId, msg.worktrees);
+      break;
+
+    case "worktree.branchList":
+      state.setBranches(msg.branches);
+      break;
+
+    case "worktree.prList":
+      state.setPRSearchResults(msg.prs);
+      break;
+
+    case "worktree.copyPaths":
+      state.setScannedCopyPaths(msg.paths);
+      break;
+
+    case "worktree.operationResult":
+      if (!msg.success) {
+        console.error(`[kodeck] Worktree ${msg.operation} failed:`, msg.message);
+      }
       break;
 
     case "error":
