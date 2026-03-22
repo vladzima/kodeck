@@ -1,5 +1,5 @@
 import { WebSocketServer } from "ws";
-import { handleMessage, cleanupAllSessions } from "./router.ts";
+import { handleMessage, cleanupAllSessions, detachSessions } from "./router.ts";
 
 const PORT = Number(process.env.KODECK_PORT) || 3001;
 const wss = new WebSocketServer({ port: PORT });
@@ -15,7 +15,10 @@ wss.on("connection", (ws) => {
       console.error("Error handling message:", err);
     });
   });
-  ws.on("close", () => console.log("client disconnected"));
+  ws.on("close", () => {
+    console.log("client disconnected");
+    detachSessions();
+  });
 });
 
 process.on("SIGINT", () => {

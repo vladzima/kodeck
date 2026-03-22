@@ -24,6 +24,10 @@ function handleServerMessage(msg: ServerMessage): void {
       state.removeSession(msg.sessionId);
       break;
 
+    case "session.renamed":
+      state.renameSession(msg.sessionId, msg.name);
+      break;
+
     case "chat.text":
       state.appendChatText(msg.sessionId, msg.messageId, msg.text);
       break;
@@ -40,10 +44,14 @@ function handleServerMessage(msg: ServerMessage): void {
       break;
 
     case "chat.permission_request":
+      state.setPendingPermission(msg.sessionId, msg.permission);
       break;
 
     case "chat.state":
       state.setChatState(msg.sessionId, msg.state);
+      if (msg.state !== "awaiting_permission") {
+        state.clearPendingPermission(msg.sessionId);
+      }
       break;
 
     case "chat.error":
@@ -55,6 +63,10 @@ function handleServerMessage(msg: ServerMessage): void {
 
     case "chat.slash_commands":
       state.setSlashCommands(msg.sessionId, msg.commands);
+      break;
+
+    case "session.meta":
+      state.setSessionMeta(msg.sessionId, msg.meta);
       break;
 
     case "terminal.output":
@@ -73,7 +85,7 @@ function handleServerMessage(msg: ServerMessage): void {
       break;
 
     case "session.list":
-      state.loadSessions(msg.sessions, msg.chatHistories);
+      state.loadSessions(msg.sessions, msg.chatHistories, msg.slashCommands, msg.sessionMetas);
       break;
 
     case "dialog.folderPicked":

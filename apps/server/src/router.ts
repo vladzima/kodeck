@@ -1,5 +1,5 @@
 import { randomUUID } from "node:crypto";
-import { execFile } from "node:child_process";
+import { execFile, spawn } from "node:child_process";
 import type { WebSocket } from "ws";
 import type {
   ClientMessage,
@@ -22,7 +22,41 @@ import {
   persistSession,
   removePersistedSession,
   updateSessionMessages,
+  updateSessionName,
+  updateSessionSlashCommands,
+  updateSessionMeta,
 } from "./session-store.ts";
+
+function generateSessionTitle(text: string): Promise<string> {
+  return new Promise((resolve) => {
+    let resolved = false;
+    const done = (title: string) => {
+      if (resolved) return;
+      resolved = true;
+      resolve(title);
+    };
+
+    const proc = spawn("claude", [
+      "-p",
+      "--model", "haiku",
+      `Generate a very short title (2-5 words, no quotes, no punctuation) for a chat session that starts with this message:\n\n${text}`,
+    ], {
+      stdio: ["ignore", "pipe", "ignore"],
+      env: { ...process.env },
+    });
+
+    let output = "";
+    proc.stdout!.on("data", (chunk: Buffer) => { output += chunk.toString(); });
+    proc.on("close", () => {
+      const title = output.trim().slice(0, 40);
+      done(title || "Chat");
+    });
+    proc.on("error", () => { done("Chat"); });
+
+    // Safety timeout — don't hang forever
+    setTimeout(() => { proc.kill(); done("Chat"); }, 15_000);
+  });
+}
 
 type Session = ClaudeSession | TerminalSession;
 const sessions = new Map<string, Session>();
@@ -77,8 +111,14 @@ function wireClaudeSession(ws: WebSocket, sessionId: string, session: ClaudeSess
     const last = messages[messages.length - 1];
     if (last && last.role === "assistant" && last.isStreaming) {
       last.text += text;
+      const lastBlock = last.contentBlocks[last.contentBlocks.length - 1];
+      if (lastBlock?.type === "text") {
+        lastBlock.text += text;
+      } else {
+        last.contentBlocks.push({ type: "text", text });
+      }
     } else {
-      messages.push({ role: "assistant", text, toolCalls: [], isStreaming: true });
+      messages.push({ role: "assistant", text, toolCalls: [], contentBlocks: [{ type: "text", text }], isStreaming: true, timestamp: Date.now() });
     }
   });
   session.on("thinking", (thinking, messageId) => {
@@ -90,7 +130,19 @@ function wireClaudeSession(ws: WebSocket, sessionId: string, session: ClaudeSess
     const messages = sessionMessages.get(sessionId)!;
     const last = messages[messages.length - 1];
     if (last && last.role === "assistant" && last.isStreaming) {
-      last.toolCalls.push(toolCall);
+      // Check if this is an update to an existing tool call (streaming partial updates)
+      const existing = last.toolCalls.find((tc) => tc.id === toolCall.id);
+      if (existing) {
+        existing.input = toolCall.input;
+        const block = last.contentBlocks.find((b) => b.type === "tool_call" && b.toolCall.id === toolCall.id);
+        if (block && block.type === "tool_call") block.toolCall.input = toolCall.input;
+      } else {
+        last.toolCalls.push(toolCall);
+        last.contentBlocks.push({ type: "tool_call", toolCall });
+      }
+    } else {
+      // Claude started with tool use before any text
+      messages.push({ role: "assistant", text: "", toolCalls: [toolCall], contentBlocks: [{ type: "tool_call", toolCall }], isStreaming: true, timestamp: Date.now() });
     }
   });
   session.on("tool_result", (toolUseId, result, isError) => {
@@ -104,6 +156,12 @@ function wireClaudeSession(ws: WebSocket, sessionId: string, session: ClaudeSess
         tc.result = result;
         tc.isError = isError;
         tc.status = isError ? "error" : "done";
+      }
+      const block = last.contentBlocks.find((b) => b.type === "tool_call" && b.toolCall.id === toolUseId);
+      if (block && block.type === "tool_call") {
+        block.toolCall.result = result;
+        block.toolCall.isError = isError;
+        block.toolCall.status = isError ? "error" : "done";
       }
     }
   });
@@ -125,13 +183,28 @@ function wireClaudeSession(ws: WebSocket, sessionId: string, session: ClaudeSess
   });
   session.on("slash_commands", (commands) => {
     send(ws, { type: "chat.slash_commands", sessionId, commands });
+    updateSessionSlashCommands(sessionId, commands).catch(console.error);
+  });
+  session.on("meta", (meta) => {
+    send(ws, { type: "session.meta", sessionId, meta });
+    updateSessionMeta(sessionId, meta).catch(console.error);
+    // Persist claudeSessionId for resume
+    if (session.claudeSessionId) {
+      const info = sessionInfos.get(sessionId);
+      if (info && !info.claudeSessionId) {
+        info.claudeSessionId = session.claudeSessionId;
+        persistSession(info).catch(console.error);
+      }
+    }
   });
   session.on("error", (error) => {
     send(ws, { type: "chat.error", sessionId, error });
   });
   session.on("exit", () => {
     sessions.delete(sessionId);
-    send(ws, { type: "session.closed", sessionId });
+    // Don't send session.closed — the session info remains in sessionInfos
+    // so it can be lazy-respawned on next message. Just reset state to idle.
+    send(ws, { type: "chat.state", sessionId, state: "idle" });
   });
 }
 
@@ -146,6 +219,50 @@ function wireTerminalSession(ws: WebSocket, sessionId: string, session: Terminal
   });
 }
 
+function respawnSession(ws: WebSocket, sessionId: string): void {
+  const info = sessionInfos.get(sessionId);
+  if (!info) return;
+
+  const oldSession = sessions.get(sessionId);
+  if (oldSession instanceof ClaudeSession) {
+    oldSession.removeAllListeners();
+    oldSession.close();
+    sessions.delete(sessionId);
+  }
+
+  const claude = new ClaudeSession();
+  sessions.set(sessionId, claude);
+  wireClaudeSession(ws, sessionId, claude);
+  claude.spawn(info.worktreePath, {
+    resumeSessionId: info.claudeSessionId ?? undefined,
+    model: info.model ?? undefined,
+    skipPermissions: info.skipPermissions ?? undefined,
+    streaming: info.streaming ?? undefined,
+  });
+}
+
+const pendingRespawns = new Set<string>();
+
+function respawnWhenIdle(ws: WebSocket, sessionId: string): void {
+  const session = sessions.get(sessionId);
+  if (!session || !(session instanceof ClaudeSession)) {
+    // Not spawned yet — nothing to restart, new settings apply on next spawn
+    return;
+  }
+
+  if (session.state === "idle") {
+    pendingRespawns.delete(sessionId);
+    respawnSession(ws, sessionId);
+  } else {
+    if (pendingRespawns.has(sessionId)) return;
+    pendingRespawns.add(sessionId);
+    session.once("end", () => {
+      pendingRespawns.delete(sessionId);
+      respawnSession(ws, sessionId);
+    });
+  }
+}
+
 async function handleSessionCreate(ws: WebSocket, msg: ClientMessage & { type: "session.create" }): Promise<void> {
   console.log(`creating ${msg.sessionType} session in ${msg.worktreePath}`);
   const sessionId = randomUUID();
@@ -155,13 +272,14 @@ async function handleSessionCreate(ws: WebSocket, msg: ClientMessage & { type: "
     worktreePath: msg.worktreePath,
     name: msg.name ?? (msg.sessionType === "chat" ? "Chat" : "Terminal"),
     createdAt: Date.now(),
+    model: msg.model,
   };
 
   if (msg.sessionType === "chat") {
     const session = new ClaudeSession();
     sessions.set(sessionId, session);
     wireClaudeSession(ws, sessionId, session);
-    session.spawn(msg.worktreePath);
+    session.spawn(msg.worktreePath, { model: msg.model });
     // Persist chat session
     sessionInfos.set(sessionId, info);
     persistSession(info).catch(console.error);
@@ -209,12 +327,17 @@ export async function handleMessage(ws: WebSocket, raw: string): Promise<void> {
       case "chat.send": {
         let session = sessions.get(msg.sessionId);
         if (!session && sessionInfos.has(msg.sessionId)) {
-          // Lazy spawn for restored session
+          // Lazy spawn for restored session — resume Claude's own session
           const info = sessionInfos.get(msg.sessionId)!;
           const claude = new ClaudeSession();
           sessions.set(msg.sessionId, claude);
           wireClaudeSession(ws, msg.sessionId, claude);
-          claude.spawn(info.worktreePath);
+          claude.spawn(info.worktreePath, {
+            resumeSessionId: info.claudeSessionId ?? undefined,
+            model: info.model ?? undefined,
+            skipPermissions: info.skipPermissions ?? undefined,
+            streaming: info.streaming ?? undefined,
+          });
           session = claude;
         }
         if (session instanceof ClaudeSession) {
@@ -222,7 +345,19 @@ export async function handleMessage(ws: WebSocket, raw: string): Promise<void> {
           const messages = sessionMessages.get(msg.sessionId) ?? [];
           messages.push({ role: "user", content: msg.text, timestamp: Date.now() });
           sessionMessages.set(msg.sessionId, messages);
-          session.send(msg.text);
+
+          // Auto-rename on first user message (non-blocking)
+          const info = sessionInfos.get(msg.sessionId);
+          const userMessages = messages.filter((m) => m.role === "user");
+          if (info && userMessages.length === 1 && info.name === "Chat") {
+            generateSessionTitle(msg.text).then((title) => {
+              info.name = title;
+              send(ws, { type: "session.renamed", sessionId: msg.sessionId, name: title });
+              updateSessionName(msg.sessionId, title).catch(console.error);
+            });
+          }
+
+          await session.send(msg.text);
         }
         break;
       }
@@ -236,7 +371,40 @@ export async function handleMessage(ws: WebSocket, raw: string): Promise<void> {
       }
 
       case "chat.permission": {
-        // Permission handling will be expanded later
+        const session = sessions.get(msg.sessionId);
+        if (session instanceof ClaudeSession) {
+          session.respondPermission(msg.requestId, msg.allow);
+        }
+        break;
+      }
+
+      case "chat.model": {
+        const info = sessionInfos.get(msg.sessionId);
+        if (info) {
+          info.model = msg.model;
+          persistSession(info).catch(console.error);
+        }
+        respawnWhenIdle(ws, msg.sessionId);
+        break;
+      }
+
+      case "chat.skipPermissions": {
+        const info = sessionInfos.get(msg.sessionId);
+        if (info) {
+          info.skipPermissions = msg.skip;
+          persistSession(info).catch(console.error);
+        }
+        respawnWhenIdle(ws, msg.sessionId);
+        break;
+      }
+
+      case "chat.streaming": {
+        const info = sessionInfos.get(msg.sessionId);
+        if (info) {
+          info.streaming = msg.streaming;
+          persistSession(info).catch(console.error);
+        }
+        respawnWhenIdle(ws, msg.sessionId);
         break;
       }
 
@@ -305,6 +473,8 @@ export async function handleMessage(ws: WebSocket, raw: string): Promise<void> {
         const persisted = await loadPersistedSessions();
         const restoredSessions: SessionInfo[] = [];
         const chatHistories: Record<string, ChatMessage[]> = {};
+        const slashCommands: Record<string, string[]> = {};
+        const sessionMetas: Record<string, import("@kodeck/shared").SessionMeta> = {};
 
         for (const p of persisted) {
           // Only restore chat sessions, skip terminal sessions
@@ -312,13 +482,15 @@ export async function handleMessage(ws: WebSocket, raw: string): Promise<void> {
 
           restoredSessions.push(p.info);
           chatHistories[p.info.id] = p.messages;
+          if (p.slashCommands) slashCommands[p.info.id] = p.slashCommands;
+          if (p.meta) sessionMetas[p.info.id] = p.meta;
 
           // Register in memory maps so lazy spawn works
           sessionInfos.set(p.info.id, p.info);
           sessionMessages.set(p.info.id, [...p.messages]);
         }
 
-        send(ws, { type: "session.list", sessions: restoredSessions, chatHistories });
+        send(ws, { type: "session.list", sessions: restoredSessions, chatHistories, slashCommands, sessionMetas });
         break;
       }
 
@@ -340,9 +512,23 @@ export async function handleMessage(ws: WebSocket, raw: string): Promise<void> {
   }
 }
 
+/** Kill all live processes and clear the sessions map (server shutdown). */
 export function cleanupAllSessions(): void {
   for (const [id, session] of sessions) {
     session.close();
     sessions.delete(id);
   }
+}
+
+/** Detach live sessions when a WebSocket disconnects.
+ *  Kills Claude processes so they get lazy-respawned on the next connection. */
+export function detachSessions(): void {
+  for (const [id, session] of sessions) {
+    if (session instanceof ClaudeSession) {
+      session.removeAllListeners();
+      session.close();
+    }
+    sessions.delete(id);
+  }
+  pendingRespawns.clear();
 }

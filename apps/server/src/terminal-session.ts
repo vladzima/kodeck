@@ -1,3 +1,4 @@
+import { execFileSync } from "node:child_process";
 import { EventEmitter } from "node:events";
 
 interface TerminalSessionEvents {
@@ -27,7 +28,15 @@ export class TerminalSession extends EventEmitter<TerminalSessionEvents> {
       throw new Error("node-pty is not available");
     }
 
-    const shell = process.env.SHELL || "zsh";
+    let shell = process.env.SHELL || "/bin/zsh";
+    // Ensure we have an absolute path — node-pty needs it
+    if (!shell.startsWith("/")) {
+      try {
+        shell = execFileSync("which", [shell], { encoding: "utf-8" }).trim();
+      } catch {
+        shell = "/bin/zsh";
+      }
+    }
 
     this.pty = nodePty.spawn(shell, [], {
       name: "xterm-256color",

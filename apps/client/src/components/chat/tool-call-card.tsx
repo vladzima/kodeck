@@ -1,7 +1,5 @@
 import { useState, memo } from "react";
 import {
-  ChevronRight,
-  ChevronDown,
   FileText,
   TerminalSquare,
   Search,
@@ -35,6 +33,19 @@ function toolSummary(tool: ToolCallInfo): string {
   return tool.name;
 }
 
+function resultBrief(tool: ToolCallInfo): string | null {
+  if (!tool.result || tool.status === "running") return null;
+  if (tool.name === "Read") {
+    const lines = tool.result.split("\n").length;
+    return `${lines} line${lines !== 1 ? "s" : ""}`;
+  }
+  if (tool.name === "Grep" || tool.name === "Glob") {
+    const lines = tool.result.trim().split("\n").filter(Boolean).length;
+    return `${lines} result${lines !== 1 ? "s" : ""}`;
+  }
+  return null;
+}
+
 export const ToolCallCard = memo(function ToolCallCard({
   toolCall,
 }: {
@@ -48,25 +59,24 @@ export const ToolCallCard = memo(function ToolCallCard({
       : toolCall.status === "error"
         ? XCircle
         : Check;
+  const brief = resultBrief(toolCall);
 
   return (
-    <div className="rounded-md border border-border bg-card text-card-foreground">
+    <div className="border-l border-border pl-2.5 py-2">
       <button
         type="button"
-        className="flex w-full items-center gap-2 px-3 py-2 text-left text-sm"
+        className="inline-flex cursor-pointer items-center gap-1.5 text-left text-[12px] text-muted-foreground hover:text-foreground/70"
         onClick={() => setExpanded(!expanded)}
       >
-        {expanded ? (
-          <ChevronDown className="h-3.5 w-3.5 shrink-0 text-muted-foreground" />
-        ) : (
-          <ChevronRight className="h-3.5 w-3.5 shrink-0 text-muted-foreground" />
-        )}
-        <Icon className="h-3.5 w-3.5 shrink-0 text-muted-foreground" />
-        <span className="flex-1 truncate font-mono text-xs">
+        <Icon className="h-3 w-3 shrink-0" />
+        <span className="border-b border-muted-foreground/60 pb-px font-mono">
           {toolSummary(toolCall)}
         </span>
+        {brief && (
+          <span className="text-muted-foreground/50">{brief}</span>
+        )}
         <StatusIcon
-          className={`h-3.5 w-3.5 shrink-0 ${
+          className={`h-3 w-3 shrink-0 ${
             toolCall.status === "running"
               ? "animate-spin text-muted-foreground"
               : toolCall.status === "error"
@@ -76,11 +86,9 @@ export const ToolCallCard = memo(function ToolCallCard({
         />
       </button>
       {expanded && toolCall.result != null && (
-        <div className="border-t border-border px-3 py-2">
-          <pre className="max-h-64 overflow-auto whitespace-pre-wrap font-mono text-xs text-muted-foreground">
-            {toolCall.result}
-          </pre>
-        </div>
+        <pre className="mt-1.5 max-h-64 overflow-auto whitespace-pre-wrap font-mono text-xs text-muted-foreground/70">
+          {toolCall.result}
+        </pre>
       )}
     </div>
   );

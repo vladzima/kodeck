@@ -76,15 +76,12 @@ export function Sidebar() {
   const { projects } = useAppStore();
 
   const handleAddProject = () => {
-    const path = window.prompt("Enter the path to a git repository:");
-    if (path) {
-      sendMessage({ type: "project.add", repoPath: path });
-    }
+    sendMessage({ type: "dialog.pickFolder" });
   };
 
   return (
     <div className="flex h-full w-60 flex-col border-r border-border bg-sidebar">
-      <div className="flex items-center justify-between border-b border-sidebar-border px-3 py-2">
+      <div className="flex h-10 items-center justify-between border-b border-sidebar-border px-3">
         <span className="text-sm font-semibold text-sidebar-foreground">
           Projects
         </span>

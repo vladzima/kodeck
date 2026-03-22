@@ -35,8 +35,7 @@ export function MainPanel() {
           return (
             <div
               key={session.id}
-              className="absolute inset-0"
-              style={{ display: isActive ? "flex" : "none" }}
+              className={`absolute inset-0 ${isActive ? "" : "hidden"}`}
             >
               <ChatView sessionId={session.id} />
             </div>

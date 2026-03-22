@@ -4,8 +4,10 @@ import type {
   ChatMessage,
   ChatSessionState,
   ChatUserMessage,
+  PermissionRequest,
   ProjectWithWorktrees,
   SessionInfo,
+  SessionMeta,
   ToolCallInfo,
 } from "@kodeck/shared";
 
@@ -33,8 +35,12 @@ interface AppState {
   activeSessionId: string | null;
   addSession: (session: SessionInfo) => void;
   removeSession: (sessionId: string) => void;
+  renameSession: (sessionId: string, name: string) => void;
   setActiveSession: (sessionId: string | null) => void;
-  loadSessions: (sessions: SessionInfo[], chatHistories: Record<string, ChatMessage[]>) => void;
+  setSessionModel: (sessionId: string, model: string) => void;
+  setSessionSkipPermissions: (sessionId: string, skip: boolean) => void;
+  setSessionStreaming: (sessionId: string, streaming: boolean) => void;
+  loadSessions: (sessions: SessionInfo[], chatHistories: Record<string, ChatMessage[]>, slashCommands?: Record<string, string[]>, metas?: Record<string, SessionMeta>) => void;
 
   // Chat data
   chatData: Map<string, ChatSessionData>;
@@ -48,6 +54,15 @@ interface AppState {
   // Slash commands
   slashCommands: Map<string, string[]>;
   setSlashCommands: (sessionId: string, commands: string[]) => void;
+
+  // Session metadata
+  sessionMeta: Map<string, SessionMeta>;
+  setSessionMeta: (sessionId: string, meta: SessionMeta) => void;
+
+  // Permission requests
+  pendingPermission: Map<string, PermissionRequest>;
+  setPendingPermission: (sessionId: string, permission: PermissionRequest) => void;
+  clearPendingPermission: (sessionId: string) => void;
 }
 
 function getOrCreateChatData(chatData: Map<string, ChatSessionData>, sessionId: string): ChatSessionData {
@@ -77,13 +92,44 @@ export const useAppStore = create<AppState>((set) => ({
       sessions: [...state.sessions, session],
     })),
   removeSession: (sessionId) =>
+    set((state) => {
+      const idx = state.sessions.findIndex((s) => s.id === sessionId);
+      const sessions = state.sessions.filter((s) => s.id !== sessionId);
+      let activeSessionId = state.activeSessionId;
+      if (activeSessionId === sessionId) {
+        // Switch to previous tab, or next, or null
+        const neighbor = sessions[Math.min(idx, sessions.length - 1)];
+        activeSessionId = neighbor?.id ?? null;
+      }
+      return { sessions, activeSessionId };
+    }),
+  renameSession: (sessionId, name) =>
     set((state) => ({
-      sessions: state.sessions.filter((s) => s.id !== sessionId),
-      activeSessionId: state.activeSessionId === sessionId ? null : state.activeSessionId,
+      sessions: state.sessions.map((s) =>
+        s.id === sessionId ? { ...s, name } : s,
+      ),
     })),
   setActiveSession: (sessionId) => set({ activeSessionId: sessionId }),
+  setSessionModel: (sessionId, model) =>
+    set((state) => ({
+      sessions: state.sessions.map((s) =>
+        s.id === sessionId ? { ...s, model } : s,
+      ),
+    })),
+  setSessionSkipPermissions: (sessionId, skip) =>
+    set((state) => ({
+      sessions: state.sessions.map((s) =>
+        s.id === sessionId ? { ...s, skipPermissions: skip } : s,
+      ),
+    })),
+  setSessionStreaming: (sessionId, streaming) =>
+    set((state) => ({
+      sessions: state.sessions.map((s) =>
+        s.id === sessionId ? { ...s, streaming } : s,
+      ),
+    })),
 
-  loadSessions: (sessions, chatHistories) =>
+  loadSessions: (sessions, chatHistories, restoredSlashCommands, restoredMetas) =>
     set((state) => {
       const chatData = new Map(state.chatData);
       for (const [sessionId, messages] of Object.entries(chatHistories)) {
@@ -95,10 +141,22 @@ export const useAppStore = create<AppState>((set) => ({
             .map((m) => m.content),
         });
       }
+      const slashCommands = new Map(state.slashCommands);
+      if (restoredSlashCommands) {
+        for (const [sessionId, commands] of Object.entries(restoredSlashCommands)) {
+          slashCommands.set(sessionId, commands);
+        }
+      }
+      const sessionMeta = new Map(state.sessionMeta);
+      if (restoredMetas) {
+        for (const [sessionId, meta] of Object.entries(restoredMetas)) {
+          sessionMeta.set(sessionId, meta);
+        }
+      }
       const activeSessionId = state.activeSessionId ?? sessions[0]?.id ?? null;
       const activeSession = sessions.find((s) => s.id === activeSessionId);
       const selectedWorktreePath = state.selectedWorktreePath ?? activeSession?.worktreePath ?? null;
-      return { sessions, chatData, activeSessionId, selectedWorktreePath };
+      return { sessions, chatData, slashCommands, sessionMeta, activeSessionId, selectedWorktreePath };
     }),
 
   // Chat data
@@ -112,13 +170,22 @@ export const useAppStore = create<AppState>((set) => ({
       const last = messages[messages.length - 1];
 
       if (last && last.role === "assistant" && last.isStreaming) {
-        messages[messages.length - 1] = { ...last, text: last.text + text };
+        const blocks = [...(last.contentBlocks ?? [])];
+        const lastBlock = blocks[blocks.length - 1];
+        if (lastBlock?.type === "text") {
+          blocks[blocks.length - 1] = { type: "text", text: lastBlock.text + text };
+        } else {
+          blocks.push({ type: "text", text });
+        }
+        messages[messages.length - 1] = { ...last, text: last.text + text, contentBlocks: blocks };
       } else {
         const newMsg: ChatAssistantMessage = {
           role: "assistant",
           text,
           toolCalls: [],
+          contentBlocks: [{ type: "text", text }],
           isStreaming: true,
+          timestamp: Date.now(),
         };
         messages.push(newMsg);
       }
@@ -135,10 +202,37 @@ export const useAppStore = create<AppState>((set) => ({
       const last = messages[messages.length - 1];
 
       if (last && last.role === "assistant" && last.isStreaming) {
-        messages[messages.length - 1] = {
-          ...last,
-          toolCalls: [...last.toolCalls, toolCall],
+        // Check if tool call already exists (streaming mode sends updates with more complete input)
+        const existingIdx = last.toolCalls.findIndex((tc) => tc.id === toolCall.id);
+        const blocks = [...(last.contentBlocks ?? [])];
+        if (existingIdx >= 0) {
+          const updated = [...last.toolCalls];
+          updated[existingIdx] = { ...updated[existingIdx], input: toolCall.input };
+          // Update the matching block too
+          const blockIdx = blocks.findIndex((b) => b.type === "tool_call" && b.toolCall.id === toolCall.id);
+          if (blockIdx >= 0) {
+            blocks[blockIdx] = { type: "tool_call", toolCall: updated[existingIdx] };
+          }
+          messages[messages.length - 1] = { ...last, toolCalls: updated, contentBlocks: blocks };
+        } else {
+          blocks.push({ type: "tool_call", toolCall });
+          messages[messages.length - 1] = {
+            ...last,
+            toolCalls: [...last.toolCalls, toolCall],
+            contentBlocks: blocks,
+          };
+        }
+      } else {
+        // No streaming assistant message yet — create one (Claude started with tool use, no text)
+        const newMsg: ChatAssistantMessage = {
+          role: "assistant",
+          text: "",
+          toolCalls: [toolCall],
+          contentBlocks: [{ type: "tool_call", toolCall }],
+          isStreaming: true,
+          timestamp: Date.now(),
         };
+        messages.push(newMsg);
       }
 
       chatData.set(sessionId, { ...data, messages });
@@ -157,7 +251,12 @@ export const useAppStore = create<AppState>((set) => ({
             : tc,
         );
         if (updatedToolCalls === msg.toolCalls) return msg;
-        return { ...msg, toolCalls: updatedToolCalls };
+        // Also update contentBlocks
+        const updatedBlocks = msg.contentBlocks.map((block) => {
+          if (block.type !== "tool_call" || block.toolCall.id !== toolUseId) return block;
+          return { ...block, toolCall: { ...block.toolCall, result, isError, status: isError ? "error" as const : "done" as const } };
+        });
+        return { ...msg, toolCalls: updatedToolCalls, contentBlocks: updatedBlocks };
       });
 
       chatData.set(sessionId, { ...data, messages });
@@ -208,5 +307,29 @@ export const useAppStore = create<AppState>((set) => ({
       const slashCommands = new Map(state.slashCommands);
       slashCommands.set(sessionId, commands);
       return { slashCommands };
+    }),
+
+  // Session metadata
+  sessionMeta: new Map(),
+  setSessionMeta: (sessionId, meta) =>
+    set((state) => {
+      const sessionMeta = new Map(state.sessionMeta);
+      sessionMeta.set(sessionId, meta);
+      return { sessionMeta };
+    }),
+
+  // Permission requests
+  pendingPermission: new Map(),
+  setPendingPermission: (sessionId, permission) =>
+    set((state) => {
+      const pendingPermission = new Map(state.pendingPermission);
+      pendingPermission.set(sessionId, permission);
+      return { pendingPermission };
+    }),
+  clearPendingPermission: (sessionId) =>
+    set((state) => {
+      const pendingPermission = new Map(state.pendingPermission);
+      pendingPermission.delete(sessionId);
+      return { pendingPermission };
     }),
 }));

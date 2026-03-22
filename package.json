@@ -14,5 +14,13 @@
   "engines": {
     "node": ">=22.12.0"
   },
-  "packageManager": "pnpm@10.32.1"
+  "packageManager": "pnpm@10.32.1",
+  "pnpm": {
+    "onlyBuiltDependencies": [
+      "node-pty"
+    ]
+  },
+  "dependencies": {
+    "@fontsource-variable/geist-mono": "^5.2.7"
+  }
 }

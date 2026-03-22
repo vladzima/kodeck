@@ -1,8 +1,36 @@
-import { useEffect } from "react";
+import { useEffect, useState, useRef } from "react";
 import { MessageSquare, TerminalIcon, X } from "lucide-react";
+import { DEFAULT_MODEL } from "@kodeck/shared";
 import { useAppStore } from "../store.ts";
 import { sendMessage } from "../hooks/use-websocket.ts";
 import { Button } from "./ui/button.tsx";
+
+function TabName({ name }: { name: string }) {
+  const [display, setDisplay] = useState(name);
+  const [opacity, setOpacity] = useState(1);
+  const prevName = useRef(name);
+
+  useEffect(() => {
+    if (name === prevName.current) return;
+    prevName.current = name;
+    // Fade out, swap text, fade in
+    setOpacity(0);
+    const timer = setTimeout(() => {
+      setDisplay(name);
+      setOpacity(1);
+    }, 150);
+    return () => clearTimeout(timer);
+  }, [name]);
+
+  return (
+    <span
+      className="max-w-32 truncate transition-opacity duration-150"
+      style={{ opacity }}
+    >
+      {display}
+    </span>
+  );
+}
 
 export function TabBar() {
   const {
@@ -38,6 +66,7 @@ export function TabBar() {
       worktreePath: selectedWorktreePath,
       sessionType: type,
       name: type === "chat" ? "Chat" : "Terminal",
+      model: type === "chat" ? DEFAULT_MODEL : undefined,
     });
   };
 
@@ -71,9 +100,9 @@ export function TabBar() {
           ) : (
             <TerminalIcon className="h-3.5 w-3.5 shrink-0" />
           )}
-          <span className="max-w-24 truncate">{session.name}</span>
+          <TabName name={session.name} />
           {index < 9 && (
-            <span className="rounded bg-foreground/10 px-1 py-0.5 text-[10px] leading-none text-muted-foreground">
+            <span className="rounded border border-border px-1 py-0.5 font-mono text-[10px] leading-none text-muted-foreground">
               ^{index + 1}
             </span>
           )}

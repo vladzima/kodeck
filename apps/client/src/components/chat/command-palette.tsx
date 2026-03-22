@@ -19,7 +19,7 @@ export function CommandPalette({ commands, selectedIndex, onSelect }: CommandPal
   return (
     <div
       ref={listRef}
-      className="absolute bottom-full left-0 mb-1 w-64 max-h-48 overflow-y-auto rounded-lg border border-border bg-popover p-1 shadow-lg"
+      className="absolute bottom-full left-0 mb-1 w-64 max-h-48 overflow-y-auto overscroll-contain rounded-lg border border-border bg-popover p-1 shadow-lg"
     >
       {commands.map((cmd, i) => (
         <div

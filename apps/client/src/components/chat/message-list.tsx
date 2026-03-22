@@ -1,4 +1,4 @@
-import { useRef, useEffect, useState, useCallback } from "react";
+import { useRef, useEffect, useState, useCallback, type ReactNode } from "react";
 import type { ChatMessage } from "@kodeck/shared";
 import { UserMessage } from "./user-message.tsx";
 import { AssistantMessage } from "./assistant-message.tsx";
@@ -7,9 +7,11 @@ import { ThinkingIndicator } from "./thinking-indicator.tsx";
 export function MessageList({
   messages,
   isThinking,
+  permissionPrompt,
 }: {
   messages: ChatMessage[];
   isThinking: boolean;
+  permissionPrompt?: ReactNode;
 }) {
   const bottomRef = useRef<HTMLDivElement>(null);
   const containerRef = useRef<HTMLDivElement>(null);
@@ -26,15 +28,15 @@ export function MessageList({
     if (autoScroll) {
       bottomRef.current?.scrollIntoView({ behavior: "instant" });
     }
-  }, [messages, isThinking, autoScroll]);
+  }, [messages, isThinking, autoScroll, permissionPrompt]);
 
   return (
     <div
       ref={containerRef}
-      className="flex-1 overflow-y-auto px-4 py-4"
+      className="flex-1 overflow-y-auto px-6 py-6"
       onScroll={handleScroll}
     >
-      <div className="flex flex-col gap-4">
+      <div className="flex flex-col gap-10">
         {messages.map((msg, i) =>
           msg.role === "user" ? (
             <UserMessage key={i} message={msg} />
@@ -43,6 +45,7 @@ export function MessageList({
           ),
         )}
         {isThinking && <ThinkingIndicator />}
+        {permissionPrompt}
         <div ref={bottomRef} />
       </div>
     </div>

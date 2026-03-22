@@ -2,6 +2,8 @@
 // Session types
 // ============================================
 
+export const DEFAULT_MODEL = "claude-sonnet-4-6";
+
 export type SessionType = "chat" | "terminal";
 
 export interface SessionInfo {
@@ -10,6 +12,10 @@ export interface SessionInfo {
   worktreePath: string;
   name: string;
   createdAt: number;
+  claudeSessionId?: string;
+  model?: string;
+  skipPermissions?: boolean;
+  streaming?: boolean;
 }
 
 // ============================================
@@ -53,12 +59,18 @@ export interface ToolCallInfo {
   isError?: boolean;
 }
 
+export type AssistantContentBlock =
+  | { type: "text"; text: string }
+  | { type: "tool_call"; toolCall: ToolCallInfo };
+
 export interface ChatAssistantMessage {
   role: "assistant";
   text: string;
   toolCalls: ToolCallInfo[];
+  contentBlocks: AssistantContentBlock[];
   thinking?: string;
   isStreaming: boolean;
+  timestamp?: number;
 }
 
 export type ChatMessage = ChatUserMessage | ChatAssistantMessage;
@@ -66,10 +78,25 @@ export type ChatMessage = ChatUserMessage | ChatAssistantMessage;
 export type ChatSessionState = "idle" | "streaming" | "awaiting_permission";
 
 // ============================================
+// Session metadata (context stats)
+// ============================================
+
+export interface SessionMeta {
+  model?: string;
+  permissionMode?: string;
+  contextTokens?: number;
+  contextWindow?: number;
+  costUsd?: number;
+  activeShells?: number;
+  activeAgents?: number;
+}
+
+// ============================================
 // Permission types
 // ============================================
 
 export interface PermissionRequest {
+  requestId: string;
   toolUseId: string;
   toolName: string;
   input: Record<string, unknown>;
@@ -84,6 +111,7 @@ export interface SessionCreateMessage {
   worktreePath: string;
   sessionType: SessionType;
   name?: string;
+  model?: string;
 }
 
 export interface SessionCloseMessage {
@@ -105,8 +133,27 @@ export interface ChatInterruptMessage {
 export interface ChatPermissionMessage {
   type: "chat.permission";
   sessionId: string;
+  requestId: string;
   toolUseId: string;
   allow: boolean;
+}
+
+export interface ChatModelMessage {
+  type: "chat.model";
+  sessionId: string;
+  model: string;
+}
+
+export interface ChatSkipPermissionsMessage {
+  type: "chat.skipPermissions";
+  sessionId: string;
+  skip: boolean;
+}
+
+export interface ChatStreamingMessage {
+  type: "chat.streaming";
+  sessionId: string;
+  streaming: boolean;
 }
 
 export interface TerminalInputMessage {
@@ -164,6 +211,9 @@ export type ClientMessage =
   | ChatSendMessage
   | ChatInterruptMessage
   | ChatPermissionMessage
+  | ChatModelMessage
+  | ChatSkipPermissionsMessage
+  | ChatStreamingMessage
   | TerminalInputMessage
   | TerminalResizeMessage
   | ProjectAddMessage
@@ -186,6 +236,12 @@ export interface SessionCreatedEvent {
 export interface SessionClosedEvent {
   type: "session.closed";
   sessionId: string;
+}
+
+export interface SessionRenamedEvent {
+  type: "session.renamed";
+  sessionId: string;
+  name: string;
 }
 
 export interface ChatTextEvent {
@@ -267,12 +323,20 @@ export interface SessionListEvent {
   type: "session.list";
   sessions: SessionInfo[];
   chatHistories: Record<string, ChatMessage[]>;
+  slashCommands: Record<string, string[]>;
+  sessionMetas: Record<string, SessionMeta>;
 }
 
 export interface ChatSlashCommandsEvent {
   type: "chat.slash_commands";
   sessionId: string;
   commands: string[];
+}
+
+export interface SessionMetaEvent {
+  type: "session.meta";
+  sessionId: string;
+  meta: SessionMeta;
 }
 
 export interface ServerErrorEvent {
@@ -284,6 +348,7 @@ export interface ServerErrorEvent {
 export type ServerMessage =
   | SessionCreatedEvent
   | SessionClosedEvent
+  | SessionRenamedEvent
   | ChatTextEvent
   | ChatThinkingEvent
   | ChatToolCallEvent
@@ -297,5 +362,6 @@ export type ServerMessage =
   | ProjectListEvent
   | DialogFolderPickedEvent
   | ChatSlashCommandsEvent
+  | SessionMetaEvent
   | SessionListEvent
   | ServerErrorEvent;
