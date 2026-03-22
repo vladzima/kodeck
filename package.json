@@ -5,9 +5,10 @@
   "type": "module",
   "scripts": {
     "ready": "vp fmt && vp lint && vp run test -r && vp run build -r",
-    "dev": "vp run client#dev server#dev"
+    "dev": "concurrently -n server,client -c blue,green \"vp run server#dev\" \"vp run client#dev\""
   },
   "devDependencies": {
+    "concurrently": "catalog:",
     "vite-plus": "catalog:"
   },
   "engines": {
