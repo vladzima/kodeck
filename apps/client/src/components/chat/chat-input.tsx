@@ -1,6 +1,5 @@
 import { useState, useRef, useCallback, useEffect } from "react";
 import { ArrowRight, Square, BrushCleaning, X, FileText } from "lucide-react";
-import { Button } from "../ui/button.tsx";
 import { CommandPalette } from "./command-palette.tsx";
 import type { ChatAttachment, ChatSessionState } from "@kodeck/shared";
 
@@ -281,63 +280,68 @@ export function ChatInput({
           selectedIndex={paletteIndex}
           onSelect={selectCommand}
         />
-        <div className="flex items-center gap-2">
-          <div
-            className="relative flex min-h-[36px] flex-1 items-center rounded-lg border border-input bg-background ring-offset-background focus-within:ring-2 focus-within:ring-ring"
-            onClick={() => textareaRef.current?.focus()}
-          >
-            <textarea
-              ref={textareaRef}
-              autoFocus
-              value={text}
-              onChange={(e) => setText(e.target.value)}
-              onKeyDown={handleKeyDown}
-              placeholder="Send message"
-              rows={1}
-              className={`relative z-10 min-h-[36px] flex-1 resize-none overflow-hidden bg-transparent px-3 py-2 text-sm leading-5 placeholder:text-muted-foreground focus:outline-none ${matchedCommand ? "[&::selection]:bg-primary/20" : ""}`}
-              style={
-                matchedCommand
-                  ? { WebkitTextFillColor: "transparent", caretColor: "var(--color-foreground)" }
-                  : undefined
-              }
-            />
-            {/* Overlay — renders styled text visible through the transparent textarea */}
-            {matchedCommand && (
-              <div
-                aria-hidden
-                className="pointer-events-none absolute inset-0 z-0 flex items-start overflow-hidden px-3 py-2 text-sm leading-5"
-              >
-                <span className="whitespace-pre-wrap break-words">
-                  <span className="text-primary">{matchedCommand}</span>
-                  <span className="text-foreground">{text.slice(matchedCommand.length)}</span>
-                </span>
-              </div>
-            )}
-            {!text && (
-              <span className="pointer-events-none mr-2.5 flex shrink-0 items-center gap-1 text-[10px] text-muted-foreground/50">
-                <kbd className="rounded border border-border px-1 py-0.5 font-mono leading-none">
-                  ^F
-                </kbd>
-                <span>to focus</span>
+        <div
+          className="relative flex min-h-[36px] items-center rounded-lg border border-input bg-background ring-offset-background focus-within:ring-2 focus-within:ring-ring"
+          onClick={() => textareaRef.current?.focus()}
+        >
+          <textarea
+            ref={textareaRef}
+            autoFocus
+            value={text}
+            onChange={(e) => setText(e.target.value)}
+            onKeyDown={handleKeyDown}
+            placeholder="Send message"
+            rows={1}
+            className={`relative z-10 min-h-[36px] flex-1 resize-none overflow-hidden bg-transparent px-3 py-2 text-sm leading-5 placeholder:text-muted-foreground focus:outline-none ${matchedCommand ? "[&::selection]:bg-primary/20" : ""}`}
+            style={
+              matchedCommand
+                ? { WebkitTextFillColor: "transparent", caretColor: "var(--color-foreground)" }
+                : undefined
+            }
+          />
+          {/* Overlay — renders styled text visible through the transparent textarea */}
+          {matchedCommand && (
+            <div
+              aria-hidden
+              className="pointer-events-none absolute inset-0 z-0 flex items-start overflow-hidden px-3 py-2 text-sm leading-5"
+            >
+              <span className="whitespace-pre-wrap break-words">
+                <span className="text-primary">{matchedCommand}</span>
+                <span className="text-foreground">{text.slice(matchedCommand.length)}</span>
               </span>
-            )}
-          </div>
+            </div>
+          )}
+          {!text && (
+            <span className="pointer-events-none mr-2 flex shrink-0 items-center gap-1 text-[10px] text-muted-foreground/50">
+              <kbd className="rounded border border-border px-1 py-0.5 font-mono leading-none">
+                ^F
+              </kbd>
+              <span>to focus</span>
+            </span>
+          )}
           {state === "streaming" ? (
-            <Button
-              variant="destructive"
-              className="h-[36px] w-[36px] shrink-0 p-0"
-              onClick={onInterrupt}
+            <button
+              type="button"
+              className="z-10 mr-1 flex h-7 w-7 shrink-0 items-center justify-center rounded-md bg-destructive text-destructive-foreground transition-colors hover:bg-destructive/90"
+              onClick={(e) => {
+                e.stopPropagation();
+                onInterrupt();
+              }}
             >
-              <Square className="h-4 w-4" />
-            </Button>
+              <Square className="h-3.5 w-3.5" />
+            </button>
           ) : (
-            <Button
-              className="h-[36px] w-[36px] shrink-0 p-0"
-              onClick={send}
+            <button
+              type="button"
+              className="z-10 mr-1 flex h-7 w-7 shrink-0 items-center justify-center rounded-md bg-primary text-primary-foreground transition-colors hover:bg-primary/90 disabled:opacity-30"
               disabled={!text.trim() && attachments.length === 0}
+              onClick={(e) => {
+                e.stopPropagation();
+                send();
+              }}
             >
-              <ArrowRight className="h-4 w-4" />
-            </Button>
+              <ArrowRight className="h-3.5 w-3.5" />
+            </button>
           )}
         </div>
       </div>

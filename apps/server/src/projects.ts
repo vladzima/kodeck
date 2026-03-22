@@ -58,12 +58,16 @@ export async function getWorktreeStatus(
     let ciStatus: WorktreePRInfo["ciStatus"];
     const checks: Array<{ status?: string; conclusion?: string }> = data.statusCheckRollup ?? [];
     if (checks.length > 0) {
-      if (checks.some((c) => c.conclusion === "FAILURE")) {
+      const hasFailure = checks.some((c) => c.conclusion === "FAILURE");
+      const hasPending = checks.some((c) => !c.conclusion);
+      if (hasFailure) {
         ciStatus = "failure";
-      } else if (checks.every((c) => c.conclusion === "SUCCESS")) {
-        ciStatus = "success";
-      } else {
+      } else if (hasPending) {
         ciStatus = "pending";
+      } else {
+        // All checks have a conclusion and none failed — treat as success
+        // (covers SUCCESS, NEUTRAL, SKIPPED, STALE, etc.)
+        ciStatus = "success";
       }
     }
 
