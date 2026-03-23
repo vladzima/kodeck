@@ -1,9 +1,11 @@
 import { useAppStore } from "../store.ts";
 import { ChatView } from "./chat/chat-view.tsx";
 import { TerminalView } from "./terminal/terminal-view.tsx";
+import { SearchResultsView } from "./search-results.tsx";
 
 export function MainPanel() {
   const { sessions, activeSessionId, selectedWorktreePath } = useAppStore();
+  const searchTabSelected = useAppStore((s) => s.searchTabSelected);
 
   const worktreeSessions = sessions.filter((s) => s.worktreePath === selectedWorktreePath);
 
@@ -25,8 +27,13 @@ export function MainPanel() {
 
   return (
     <div className="relative h-full">
+      {searchTabSelected && (
+        <div className="absolute inset-0">
+          <SearchResultsView />
+        </div>
+      )}
       {worktreeSessions.map((session) => {
-        const isActive = session.id === activeSessionId;
+        const isActive = session.id === activeSessionId && !searchTabSelected;
         if (session.type === "chat") {
           return (
             <div key={session.id} className={`absolute inset-0 ${isActive ? "" : "hidden"}`}>

@@ -1,5 +1,5 @@
 import { useEffect, useState, useRef } from "react";
-import { Bug, MessageSquare, Plus, TerminalIcon, X } from "lucide-react";
+import { Bug, MessageSquare, Plus, Search, TerminalIcon, X } from "lucide-react";
 import { DEFAULT_MODEL } from "@kodeck/shared";
 import { useAppStore } from "../store.ts";
 import { sendMessage } from "../hooks/use-websocket.ts";
@@ -37,24 +37,36 @@ export function TabBar() {
     selectedWorktreePath,
     debugMode,
     setDebugMode,
+    searchOpen,
+    setSearchOpen,
+    searchResultsTabOpen,
+    searchTabSelected,
+    setSearchTabSelected,
+    searchResults,
   } = useAppStore();
 
   const worktreeSessions = sessions.filter((s) => s.worktreePath === selectedWorktreePath);
+
+  const searchTabIndex = searchResultsTabOpen ? worktreeSessions.length : -1;
 
   // Ctrl+1-9 to switch tabs
   useEffect(() => {
     const handleKeyDown = (e: KeyboardEvent) => {
       if ((e.ctrlKey || e.metaKey) && e.key >= "1" && e.key <= "9") {
         const index = Number(e.key) - 1;
-        if (index < worktreeSessions.length) {
+        if (index === searchTabIndex) {
+          e.preventDefault();
+          setSearchTabSelected(true);
+        } else if (index < worktreeSessions.length) {
           e.preventDefault();
           setActiveSession(worktreeSessions[index].id);
+          setSearchTabSelected(false);
         }
       }
     };
     window.addEventListener("keydown", handleKeyDown);
     return () => window.removeEventListener("keydown", handleKeyDown);
-  }, [worktreeSessions, setActiveSession]);
+  }, [worktreeSessions, setActiveSession, setSearchTabSelected, searchTabIndex]);
 
   const handleNewSession = (type: "chat" | "terminal") => {
     if (!selectedWorktreePath) return;
@@ -83,11 +95,14 @@ export function TabBar() {
           role="tab"
           tabIndex={0}
           className={`group flex h-full cursor-pointer items-center gap-1.5 px-2.5 text-sm transition-colors ${
-            activeSessionId === session.id
+            activeSessionId === session.id && !searchTabSelected
               ? "text-foreground border-b-2 border-primary"
               : "text-muted-foreground hover:text-foreground/70"
           }`}
-          onClick={() => setActiveSession(session.id)}
+          onClick={() => {
+            setActiveSession(session.id);
+            setSearchTabSelected(false);
+          }}
           onKeyDown={(e) => {
             if (e.key === "Enter" || e.key === " ") setActiveSession(session.id);
           }}
@@ -112,6 +127,44 @@ export function TabBar() {
           </button>
         </div>
       ))}
+      {searchResultsTabOpen && (
+        <div
+          role="tab"
+          tabIndex={0}
+          className={`group flex h-full cursor-pointer items-center gap-1.5 px-2.5 text-sm transition-colors ${
+            searchTabSelected
+              ? "text-foreground border-b-2 border-primary"
+              : "text-muted-foreground hover:text-foreground/70"
+          }`}
+          onClick={() => setSearchTabSelected(true)}
+          onKeyDown={(e) => {
+            if (e.key === "Enter" || e.key === " ") setSearchTabSelected(true);
+          }}
+        >
+          <Search className="h-3.5 w-3.5 shrink-0" />
+          <span className="max-w-32 truncate">Search ({searchResults.length})</span>
+          {searchTabIndex < 9 && (
+            <span className="rounded border border-border px-1 py-0.5 font-mono text-[10px] leading-none text-muted-foreground">
+              ^{searchTabIndex + 1}
+            </span>
+          )}
+          <button
+            type="button"
+            className="cursor-pointer rounded-sm p-0.5 text-muted-foreground/50 transition-colors hover:bg-foreground/10 hover:text-foreground"
+            onClick={(e) => {
+              e.stopPropagation();
+              const s = useAppStore.getState();
+              s.setSearchResultsTabOpen(false);
+              s.setSearchTabSelected(false);
+              s.setSearchOpen(false);
+              s.setSearchQuery("");
+              s.setSearchResults([]);
+            }}
+          >
+            <X className="h-3 w-3" />
+          </button>
+        </div>
+      )}
       <div className="mx-1.5 h-5 w-px bg-border" />
       <div className="flex items-center gap-1">
         <button
@@ -136,6 +189,15 @@ export function TabBar() {
         </button>
       </div>
       <div className="ml-auto flex items-center">
+        <Button
+          variant="ghost"
+          size="icon-xs"
+          onClick={() => setSearchOpen(!searchOpen)}
+          title="Search (⌘F)"
+          className={searchOpen ? "text-primary" : ""}
+        >
+          <Search className="h-3.5 w-3.5" />
+        </Button>
         <Button
           variant="ghost"
           size="icon-xs"

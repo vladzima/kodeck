@@ -26,6 +26,17 @@ import {
   DialogDescription,
 } from "./ui/dialog.tsx";
 
+const SPINNER_FRAMES = ["⠋", "⠙", "⠹", "⠸", "⠼", "⠴", "⠦", "⠧", "⠇", "⠏"];
+
+function AsciiSpinner() {
+  const [frame, setFrame] = useState(0);
+  useEffect(() => {
+    const id = setInterval(() => setFrame((f) => (f + 1) % SPINNER_FRAMES.length), 80);
+    return () => clearInterval(id);
+  }, []);
+  return <span className="text-[10px] text-muted-foreground/40">{SPINNER_FRAMES[frame]}</span>;
+}
+
 function CiStatusDot({ status }: { status?: "pending" | "success" | "failure" }) {
   if (status === "success")
     return <span className="inline-block h-2 w-2 rounded-full border-[1.5px] border-green-400" />;
@@ -46,11 +57,13 @@ function ReviewStatusIcon({ status }: { status?: "pending" | "approved" | "chang
 function WorktreeItem({
   worktree,
   isSelected,
+  isStatusFresh,
   onSelect,
   onRemove,
 }: {
   worktree: WorktreeInfo;
   isSelected: boolean;
+  isStatusFresh: boolean;
   onSelect: () => void;
   onRemove: () => void;
 }) {
@@ -64,9 +77,7 @@ function WorktreeItem({
     <button
       type="button"
       className={`relative flex w-full flex-col gap-0.5 rounded-md px-2 py-1 text-left text-xs font-mono transition-colors ${
-        isSelected
-          ? "bg-accent text-accent-foreground"
-          : "text-muted-foreground hover:bg-accent/50"
+        isSelected ? "bg-accent text-accent-foreground" : "text-muted-foreground hover:bg-accent/50"
       }`}
       onClick={onSelect}
       onMouseEnter={() => setHovered(true)}
@@ -85,23 +96,35 @@ function WorktreeItem({
 
       {/* Line 2: PR metadata — always rendered to keep height stable */}
       {hasPr && worktree.pr && (
-        <div className={`flex w-full items-center gap-0 pl-[20px] text-[11px] text-muted-foreground/50 ${hovered ? "invisible" : ""}`}>
+        <div
+          className={`flex w-full items-center gap-0 pl-[20px] text-[11px] text-muted-foreground/50 ${hovered ? "invisible" : ""}`}
+        >
           <span>#{worktree.pr.number}</span>
           {worktree.pr.status !== "open" && (
             <>
               <span className="mx-1">·</span>
-              <span className={worktree.pr.status === "merged" ? "text-purple-400" : "text-muted-foreground/40"}>
+              <span
+                className={
+                  worktree.pr.status === "merged" ? "text-purple-400" : "text-muted-foreground/40"
+                }
+              >
                 {worktree.pr.status}
               </span>
             </>
           )}
-          {worktree.pr.ciStatus && (
+          {!isStatusFresh && (
+            <>
+              <span className="mx-1">·</span>
+              <AsciiSpinner />
+            </>
+          )}
+          {isStatusFresh && worktree.pr.ciStatus && (
             <>
               <span className="mx-1">·</span>
               <CiStatusDot status={worktree.pr.ciStatus} />
             </>
           )}
-          {worktree.pr.reviewStatus && (
+          {isStatusFresh && worktree.pr.reviewStatus && (
             <>
               <span className="mx-1">·</span>
               <ReviewStatusIcon status={worktree.pr.reviewStatus} />
@@ -180,6 +203,7 @@ function ProjectItem({ project }: { project: ProjectWithWorktrees }) {
   const [expanded, setExpanded] = useState(true);
   const [removeWorktree, setRemoveWorktree] = useState<WorktreeInfo | null>(null);
   const { selectedWorktreePath, selectWorktree, sessions } = useAppStore();
+  const isStatusFresh = useAppStore((s) => s.worktreeStatusFresh.has(project.id));
   const { setWorktreeCreateModalOpen, setWorktreeCreateProjectId } = useAppStore();
 
   const sessionsInWorktree = removeWorktree
@@ -188,7 +212,11 @@ function ProjectItem({ project }: { project: ProjectWithWorktrees }) {
 
   const handleConfirmRemove = () => {
     if (!removeWorktree) return;
-    sendMessage({ type: "worktree.remove", projectId: project.id, worktreePath: removeWorktree.path });
+    sendMessage({
+      type: "worktree.remove",
+      projectId: project.id,
+      worktreePath: removeWorktree.path,
+    });
     // If we're removing the selected worktree, switch to main
     if (selectedWorktreePath === removeWorktree.path) {
       const main = project.worktrees.find((w) => w.isMain);
@@ -233,6 +261,7 @@ function ProjectItem({ project }: { project: ProjectWithWorktrees }) {
               key={wt.path}
               worktree={wt}
               isSelected={selectedWorktreePath === wt.path}
+              isStatusFresh={isStatusFresh}
               onSelect={() => selectWorktree(wt.path)}
               onRemove={() => setRemoveWorktree(wt)}
             />
@@ -246,16 +275,28 @@ function ProjectItem({ project }: { project: ProjectWithWorktrees }) {
           <DialogHeader>
             <DialogTitle>Remove worktree</DialogTitle>
             <DialogDescription>
-              Remove worktree <code className="rounded bg-muted px-1 py-0.5 text-xs font-mono">{removeWorktree?.branch}</code>?
+              Remove worktree{" "}
+              <code className="rounded bg-muted px-1 py-0.5 text-xs font-mono">
+                {removeWorktree?.branch}
+              </code>
+              ?
               {sessionsInWorktree > 0 && (
-                <> This will kill {sessionsInWorktree} active session{sessionsInWorktree > 1 ? "s" : ""} and</>
+                <>
+                  {" "}
+                  This will kill {sessionsInWorktree} active session
+                  {sessionsInWorktree > 1 ? "s" : ""} and
+                </>
               )}{" "}
               {sessionsInWorktree > 0 ? "delete" : "Delete"} the directory from disk.
             </DialogDescription>
           </DialogHeader>
           <DialogFooter>
-            <Button variant="outline" onClick={() => setRemoveWorktree(null)}>Cancel</Button>
-            <Button variant="destructive" onClick={handleConfirmRemove}>Remove</Button>
+            <Button variant="outline" onClick={() => setRemoveWorktree(null)}>
+              Cancel
+            </Button>
+            <Button variant="destructive" onClick={handleConfirmRemove}>
+              Remove
+            </Button>
           </DialogFooter>
         </DialogContent>
       </Dialog>
@@ -379,9 +420,17 @@ export function Sidebar() {
   };
 
   return (
-    <div className="relative flex h-full shrink-0 flex-col border-r border-border bg-sidebar text-xs font-mono text-muted-foreground" style={{ width }}>
+    <div
+      className="relative flex h-full shrink-0 flex-col border-r border-border bg-sidebar text-xs font-mono text-muted-foreground"
+      style={{ width }}
+    >
       <div className="flex h-10 items-center border-b border-border pl-9 pr-4">
-        <span className="text-sm font-medium uppercase tracking-[0.25em] text-foreground" style={{ fontFamily: "'Space Grotesk Variable', sans-serif" }}>kodeck</span>
+        <span
+          className="text-sm font-medium uppercase tracking-[0.25em] text-foreground"
+          style={{ fontFamily: "'Space Grotesk Variable', sans-serif" }}
+        >
+          kodeck
+        </span>
       </div>
       <div className="px-2 pt-3 pb-2">
         <button

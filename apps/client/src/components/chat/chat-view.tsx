@@ -110,6 +110,7 @@ export function ChatView({ sessionId }: { sessionId: string }) {
     <div className="flex h-full">
       <div className="flex flex-1 flex-col overflow-hidden">
         <MessageList
+          sessionId={sessionId}
           messages={messages}
           isThinking={isThinking}
           permissionPrompt={permissionPrompt}

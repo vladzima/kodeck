@@ -1,6 +1,7 @@
 import { useEffect } from "react";
 import type { ClientMessage, ServerMessage } from "@kodeck/shared";
 import { useAppStore } from "../store.ts";
+import { performSearch } from "../search-utils.ts";
 
 let wsInstance: WebSocket | null = null;
 let initialized = false;
@@ -13,6 +14,14 @@ function playNotification(): void {
   notificationSound.play().catch(() => {
     // Browser may block autoplay before user interaction — ignore
   });
+}
+
+function rerunPersistedSearch(): void {
+  const s = useAppStore.getState();
+  if (s.searchQuery.trim()) {
+    const results = performSearch(s.searchQuery, s.searchScope, s);
+    s.setSearchResults(results);
+  }
 }
 
 export function sendMessage(msg: ClientMessage): void {
@@ -99,9 +108,11 @@ function handleServerMessage(msg: ServerMessage): void {
 
     case "project.list":
       state.setProjects(msg.projects);
+      state.markAllWorktreeStatusStale();
+      rerunPersistedSearch();
       break;
 
-    case "session.list":
+    case "session.list": {
       console.log(`[kodeck] Loaded ${msg.sessions.length} sessions from server`);
       state.loadSessions(
         msg.sessions,
@@ -111,7 +122,9 @@ function handleServerMessage(msg: ServerMessage): void {
         msg.sessionStates,
         msg.pendingPermissions,
       );
+      rerunPersistedSearch();
       break;
+    }
 
     case "dialog.folderPicked":
       if (msg.path) {
@@ -125,6 +138,7 @@ function handleServerMessage(msg: ServerMessage): void {
 
     case "worktree.status":
       state.updateWorktreeStatus(msg.projectId, msg.worktrees);
+      state.markWorktreeStatusFresh(msg.projectId);
       break;
 
     case "worktree.branchList":

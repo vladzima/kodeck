@@ -215,18 +215,6 @@ export function ChatInput({
     }
   }, [text]);
 
-  // Ctrl+F to focus input
-  useEffect(() => {
-    const handleGlobalKey = (e: KeyboardEvent) => {
-      if ((e.ctrlKey || e.metaKey) && e.key === "f") {
-        e.preventDefault();
-        textareaRef.current?.focus();
-      }
-    };
-    window.addEventListener("keydown", handleGlobalKey);
-    return () => window.removeEventListener("keydown", handleGlobalKey);
-  }, []);
-
   return (
     <div
       className={`border-t border-border bg-background px-5 py-4 transition-colors ${isDragOver ? "bg-primary/5 ring-2 ring-inset ring-primary/30" : ""}`}
@@ -255,10 +243,7 @@ export function ChatInput({
                 </button>
               </div>
             ) : (
-              <div
-                key={i}
-                className="group flex items-center gap-1 text-xs text-muted-foreground"
-              >
+              <div key={i} className="group flex items-center gap-1 text-xs text-muted-foreground">
                 <FileText className="h-3.5 w-3.5 shrink-0" />
                 <span className="max-w-[120px] truncate">{att.filename}</span>
                 <button
@@ -317,9 +302,9 @@ export function ChatInput({
           {!text && !isFocused && (
             <span className="pointer-events-none mr-2 flex shrink-0 items-center gap-1 text-[10px] text-muted-foreground/50">
               <kbd className="rounded border border-border px-1 py-0.5 font-mono leading-none">
-                ^F
+                ⌘F
               </kbd>
-              <span>to focus</span>
+              <span>to search</span>
             </span>
           )}
           {state === "streaming" ? (

@@ -119,6 +119,54 @@ interface AppState {
 
   // Worktree status updates
   updateWorktreeStatus: (projectId: string, worktrees: WorktreeInfo[]) => void;
+
+  // Track whether worktree status is fresh (from live poll) or stale (from cache)
+  worktreeStatusFresh: Set<string>;
+  markAllWorktreeStatusStale: () => void;
+  markWorktreeStatusFresh: (projectId: string) => void;
+
+  // Search
+  searchOpen: boolean;
+  setSearchOpen: (open: boolean) => void;
+  searchQuery: string;
+  setSearchQuery: (query: string) => void;
+  searchScope: import("./search-utils.ts").SearchScope;
+  setSearchScope: (scope: import("./search-utils.ts").SearchScope) => void;
+  searchResultsTabOpen: boolean;
+  setSearchResultsTabOpen: (open: boolean) => void;
+  searchTabSelected: boolean;
+  setSearchTabSelected: (selected: boolean) => void;
+  searchResults: SearchResult[];
+  setSearchResults: (results: SearchResult[]) => void;
+  scrollToMessage: { sessionId: string; messageIndex: number } | null;
+  setScrollToMessage: (target: { sessionId: string; messageIndex: number } | null) => void;
+}
+
+export interface SearchResult {
+  sessionId: string;
+  sessionName: string;
+  projectName: string;
+  worktreeBranch: string;
+  messageIndex: number;
+  role: "user" | "assistant";
+  text: string;
+  timestamp: number;
+}
+
+// ── localStorage persistence ─────────────────────────────────────────
+const PERSIST = {
+  worktree: "kodeck-selected-worktree",
+  session: "kodeck-active-session",
+  searchOpen: "kodeck-search-open",
+  searchQuery: "kodeck-search-query",
+  searchScope: "kodeck-search-scope",
+  searchResultsTab: "kodeck-search-results-tab",
+  searchTabSelected: "kodeck-search-tab-selected",
+};
+
+function persist(key: string, value: string | null): void {
+  if (value == null || value === "") localStorage.removeItem(key);
+  else localStorage.setItem(key, value);
 }
 
 function getOrCreateChatData(
@@ -140,12 +188,15 @@ export const useAppStore = create<AppState>((set) => ({
   setProjects: (projects) => set({ projects }),
 
   // Worktree selection
-  selectedWorktreePath: null,
-  selectWorktree: (path) => set({ selectedWorktreePath: path }),
+  selectedWorktreePath: localStorage.getItem(PERSIST.worktree),
+  selectWorktree: (path) => {
+    persist(PERSIST.worktree, path);
+    set({ selectedWorktreePath: path });
+  },
 
   // Sessions
   sessions: [],
-  activeSessionId: null,
+  activeSessionId: localStorage.getItem(PERSIST.session),
   addSession: (session) =>
     set((state) => {
       // Prevent duplicates
@@ -168,7 +219,10 @@ export const useAppStore = create<AppState>((set) => ({
     set((state) => ({
       sessions: state.sessions.map((s) => (s.id === sessionId ? { ...s, name } : s)),
     })),
-  setActiveSession: (sessionId) => set({ activeSessionId: sessionId }),
+  setActiveSession: (sessionId) => {
+    persist(PERSIST.session, sessionId);
+    set({ activeSessionId: sessionId });
+  },
   setSessionModel: (sessionId, model) =>
     set((state) => ({
       sessions: state.sessions.map((s) => (s.id === sessionId ? { ...s, model } : s)),
@@ -225,7 +279,12 @@ export const useAppStore = create<AppState>((set) => ({
           pendingPermission.set(sessionId, perm);
         }
       }
-      const activeSessionId = state.activeSessionId ?? sessions[0]?.id ?? null;
+      // Validate persisted selections still exist, fall back if not
+      const persistedSessionValid =
+        state.activeSessionId && sessions.some((s) => s.id === state.activeSessionId);
+      const activeSessionId = persistedSessionValid
+        ? state.activeSessionId
+        : (sessions[0]?.id ?? null);
       const activeSession = sessions.find((s) => s.id === activeSessionId);
       const selectedWorktreePath =
         state.selectedWorktreePath ?? activeSession?.worktreePath ?? null;
@@ -465,10 +524,7 @@ export const useAppStore = create<AppState>((set) => ({
   notifications: [],
   addNotification: (message, type) =>
     set((state) => ({
-      notifications: [
-        ...state.notifications,
-        { id: crypto.randomUUID(), message, type },
-      ],
+      notifications: [...state.notifications, { id: crypto.randomUUID(), message, type }],
     })),
   removeNotification: (id) =>
     set((state) => ({
@@ -478,8 +534,49 @@ export const useAppStore = create<AppState>((set) => ({
   // Worktree status updates
   updateWorktreeStatus: (projectId, worktrees) =>
     set((state) => ({
-      projects: state.projects.map((p) =>
-        p.id === projectId ? { ...p, worktrees } : p,
-      ),
+      projects: state.projects.map((p) => (p.id === projectId ? { ...p, worktrees } : p)),
     })),
+
+  // Worktree status freshness tracking
+  worktreeStatusFresh: new Set(),
+  markAllWorktreeStatusStale: () => set({ worktreeStatusFresh: new Set() }),
+  markWorktreeStatusFresh: (projectId) =>
+    set((state) => {
+      const fresh = new Set(state.worktreeStatusFresh);
+      fresh.add(projectId);
+      return { worktreeStatusFresh: fresh };
+    }),
+
+  // Search
+  searchOpen: localStorage.getItem(PERSIST.searchOpen) === "true",
+  setSearchOpen: (open) => {
+    persist(PERSIST.searchOpen, String(open));
+    set({ searchOpen: open });
+  },
+  searchQuery: localStorage.getItem(PERSIST.searchQuery) ?? "",
+  setSearchQuery: (query) => {
+    persist(PERSIST.searchQuery, query);
+    set({ searchQuery: query });
+  },
+  searchScope:
+    (localStorage.getItem(PERSIST.searchScope) as import("./search-utils.ts").SearchScope) ||
+    "project",
+  setSearchScope: (scope) => {
+    persist(PERSIST.searchScope, scope);
+    set({ searchScope: scope });
+  },
+  searchResultsTabOpen: localStorage.getItem(PERSIST.searchResultsTab) === "true",
+  setSearchResultsTabOpen: (open) => {
+    persist(PERSIST.searchResultsTab, String(open));
+    set({ searchResultsTabOpen: open });
+  },
+  searchTabSelected: localStorage.getItem(PERSIST.searchTabSelected) === "true",
+  setSearchTabSelected: (selected) => {
+    persist(PERSIST.searchTabSelected, String(selected));
+    set({ searchTabSelected: selected });
+  },
+  searchResults: [],
+  setSearchResults: (results) => set({ searchResults: results }),
+  scrollToMessage: null,
+  setScrollToMessage: (target) => set({ scrollToMessage: target }),
 }));
