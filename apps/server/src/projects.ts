@@ -13,6 +13,7 @@ import type {
   PRSearchResult,
 } from "@kodeck/shared";
 import { loadConfig, saveConfig } from "./config.ts";
+import { parseGitStatus, parseGitLog, parseWorktreeList } from "./git-parsers.ts";
 
 const execFile = promisify(execFileCb);
 
@@ -103,31 +104,19 @@ export async function getWorktreeStatus(
   }
 
   // File changes (staged + unstaged)
-  const staged: WorktreeFileChange[] = [];
-  const unstaged: WorktreeFileChange[] = [];
+  let staged: ReturnType<typeof parseGitStatus>["staged"] = [];
+  let unstaged: ReturnType<typeof parseGitStatus>["unstaged"] = [];
   try {
     const { stdout } = await execFile("git", ["status", "--porcelain"], { cwd: worktreePath });
-    for (const line of stdout.split("\n")) {
-      if (!line) continue;
-      const x = line[0]; // index (staged)
-      const y = line[1]; // worktree (unstaged)
-      const filePath = line.slice(3).split(" -> ").pop()!; // handle renames
-      if (x && x !== " " && x !== "?") {
-        staged.push({ path: filePath, status: x as WorktreeFileChange["status"] });
-      }
-      if (y && y !== " ") {
-        unstaged.push({
-          path: filePath,
-          status: x === "?" ? "?" : (y as WorktreeFileChange["status"]),
-        });
-      }
-    }
+    const parsed = parseGitStatus(stdout);
+    staged = parsed.staged;
+    unstaged = parsed.unstaged;
   } catch {
     // git status failed
   }
 
   // Unpushed commits
-  const unpushed: WorktreeCommit[] = [];
+  let unpushed: ReturnType<typeof parseGitLog> = [];
   if (ahead > 0) {
     try {
       const { stdout } = await execFile(
@@ -135,14 +124,7 @@ export async function getWorktreeStatus(
         ["log", "@{upstream}..HEAD", "--oneline", "--format=%h %s"],
         { cwd: worktreePath },
       );
-      for (const line of stdout.trim().split("\n")) {
-        if (!line) continue;
-        const spaceIdx = line.indexOf(" ");
-        unpushed.push({
-          hash: line.slice(0, spaceIdx),
-          message: line.slice(spaceIdx + 1),
-        });
-      }
+      unpushed = parseGitLog(stdout);
     } catch {
       // no upstream
     }
@@ -161,31 +143,7 @@ export async function listWorktrees(
     cwd: repoPath,
   });
 
-  const worktrees: WorktreeInfo[] = [];
-  let current: Partial<WorktreeInfo> = {};
-
-  for (const line of stdout.split("\n")) {
-    if (line.startsWith("worktree ")) {
-      current.path = line.slice("worktree ".length);
-    } else if (line.startsWith("branch ")) {
-      // branch refs/heads/main → main
-      current.branch = line.slice("branch ".length).replace("refs/heads/", "");
-    } else if (line === "bare") {
-      // skip bare repos worktree entry
-      current = {};
-    } else if (line === "") {
-      if (current.path) {
-        worktrees.push({
-          path: current.path,
-          branch: current.branch ?? "(detached)",
-          isMain: worktrees.length === 0,
-          ahead: 0,
-          behind: 0,
-        });
-      }
-      current = {};
-    }
-  }
+  const worktrees = parseWorktreeList(stdout);
 
   // Optionally enrich with status info
   if (opts?.includeStatus) {

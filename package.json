@@ -12,7 +12,8 @@
   },
   "devDependencies": {
     "concurrently": "catalog:",
-    "vite-plus": "catalog:"
+    "vite-plus": "catalog:",
+    "vitest": "^4.1.0"
   },
   "engines": {
     "node": ">=22.12.0"
