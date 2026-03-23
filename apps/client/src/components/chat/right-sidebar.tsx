@@ -1,5 +1,5 @@
-import { useState, useRef, useEffect } from "react";
-import { ChevronDown, FileText, Gauge, Radio, Shield } from "lucide-react";
+import { useState, useRef, useEffect, useCallback } from "react";
+import { ChevronDown, ChevronRight, FileText, Gauge, Radio, Shield } from "lucide-react";
 import spinners from "cli-spinners";
 import type { ChatSessionState, ConfigEntry, EffortLevel, SessionMeta } from "@kodeck/shared";
 import { useAppStore } from "../../store.ts";
@@ -234,102 +234,155 @@ export function RightSidebar({
     assistantTurns > 0 ||
     (meta?.compactions ?? 0) > 0;
 
+  const MIN_WIDTH = 140;
+  const MAX_WIDTH = 360;
+  const STORAGE_KEY = "kodeck-right-sidebar-width";
+  const [width, setWidth] = useState(() => {
+    const stored = localStorage.getItem(STORAGE_KEY);
+    return stored ? Math.max(MIN_WIDTH, Math.min(MAX_WIDTH, Number(stored))) : 176;
+  });
+  const dragging = useRef(false);
+  const startX = useRef(0);
+  const startWidth = useRef(0);
+
+  const onMouseMove = useCallback((e: MouseEvent) => {
+    if (!dragging.current) return;
+    // Drag left = wider (resize handle is on the left edge)
+    const delta = startX.current - e.clientX;
+    setWidth(Math.max(MIN_WIDTH, Math.min(MAX_WIDTH, startWidth.current + delta)));
+  }, []);
+
+  const onMouseUp = useCallback(() => {
+    dragging.current = false;
+    document.body.style.cursor = "";
+    document.body.style.userSelect = "";
+    localStorage.setItem(STORAGE_KEY, String(width));
+  }, [width]);
+
+  useEffect(() => {
+    document.addEventListener("mousemove", onMouseMove);
+    document.addEventListener("mouseup", onMouseUp);
+    return () => {
+      document.removeEventListener("mousemove", onMouseMove);
+      document.removeEventListener("mouseup", onMouseUp);
+    };
+  }, [onMouseMove, onMouseUp]);
+
+  const handleDragStart = (e: React.MouseEvent) => {
+    e.preventDefault();
+    dragging.current = true;
+    startX.current = e.clientX;
+    startWidth.current = width;
+    document.body.style.cursor = "col-resize";
+    document.body.style.userSelect = "none";
+  };
+
   return (
-    <div className="flex w-44 shrink-0 flex-col gap-4 border-l border-border px-4 py-4 text-xs font-mono text-muted-foreground">
-      {/* Parameters — interactive settings */}
-      <SidebarGroup title="Parameters">
-        <StatRow label="Model">
-          <ModelSelector currentModel={model} onSelect={onModelChange} />
-        </StatRow>
+    <div
+      className="relative flex shrink-0 flex-col border-l border-border text-xs font-mono text-muted-foreground"
+      style={{ width }}
+    >
+      {/* Resize handle */}
+      <div
+        className="absolute left-0 top-0 z-10 h-full w-1 cursor-col-resize hover:bg-primary/30 active:bg-primary/50"
+        onMouseDown={handleDragStart}
+      />
+      <div className="flex flex-1 flex-col gap-4 overflow-y-auto px-4 py-4">
+        {/* Parameters — interactive settings */}
+        <SidebarGroup title="Parameters">
+          <StatRow label="Model">
+            <ModelSelector currentModel={model} onSelect={onModelChange} />
+          </StatRow>
 
-        <StatRow label="Effort">
-          <EffortSelector current={effort} onSelect={onEffortChange} />
-        </StatRow>
+          <StatRow label="Effort">
+            <EffortSelector current={effort} onSelect={onEffortChange} />
+          </StatRow>
 
-        <StatRow label="Streaming">
-          <button
-            type="button"
-            className="flex w-fit cursor-pointer items-center gap-1 border-b border-muted-foreground/60 pb-px text-muted-foreground transition-colors hover:text-foreground"
-            onClick={() => onStreamingChange(!streaming)}
-          >
-            <Radio className="h-3.5 w-3.5" />
-            {streaming ? "Live" : "Batch"}
-          </button>
-        </StatRow>
+          <StatRow label="Streaming">
+            <button
+              type="button"
+              className="flex w-fit cursor-pointer items-center gap-1 border-b border-muted-foreground/60 pb-px text-muted-foreground transition-colors hover:text-foreground"
+              onClick={() => onStreamingChange(!streaming)}
+            >
+              <Radio className="h-3.5 w-3.5" />
+              {streaming ? "Live" : "Batch"}
+            </button>
+          </StatRow>
 
-        <StatRow label="Permissions">
-          <button
-            type="button"
-            className="flex w-fit cursor-pointer items-center gap-1 border-b border-muted-foreground/60 pb-px text-muted-foreground transition-colors hover:text-foreground"
-            onClick={() => onSkipPermissionsChange(!skipPermissions)}
-          >
-            <Shield className="h-3.5 w-3.5" />
-            {skipPermissions ? "Allow all" : "Restricted"}
-          </button>
-        </StatRow>
-      </SidebarGroup>
+          <StatRow label="Permissions">
+            <button
+              type="button"
+              className="flex w-fit cursor-pointer items-center gap-1 border-b border-muted-foreground/60 pb-px text-muted-foreground transition-colors hover:text-foreground"
+              onClick={() => onSkipPermissionsChange(!skipPermissions)}
+            >
+              <Shield className="h-3.5 w-3.5" />
+              {skipPermissions ? "Allow all" : "Restricted"}
+            </button>
+          </StatRow>
+        </SidebarGroup>
 
-      {/* Stats — read-only info */}
-      {hasStats && (
-        <>
-          <div className="-mx-4 border-t border-border" />
-          <SidebarGroup title="Stats">
-            {meta?.contextTokens != null && meta?.contextWindow != null && (
-              <StatRow label="Context">
-                <span className={tokenColorClass(meta.contextTokens, meta.contextWindow)}>
-                  {formatTokens(meta.contextTokens)} / {formatTokens(meta.contextWindow)}
-                </span>
-              </StatRow>
-            )}
+        {/* Stats — read-only info */}
+        {hasStats && (
+          <>
+            <div className="-mx-4 border-t border-border" />
+            <SidebarGroup title="Stats">
+              {meta?.contextTokens != null && meta?.contextWindow != null && (
+                <StatRow label="Context">
+                  <span className={tokenColorClass(meta.contextTokens, meta.contextWindow)}>
+                    {formatTokens(meta.contextTokens)} / {formatTokens(meta.contextWindow)}
+                  </span>
+                </StatRow>
+              )}
 
-            {meta?.costUsd != null && (
-              <StatRow label="Cost">
-                <span>${meta.costUsd.toFixed(2)}</span>
-              </StatRow>
-            )}
+              {meta?.costUsd != null && (
+                <StatRow label="Cost">
+                  <span>${meta.costUsd.toFixed(2)}</span>
+                </StatRow>
+              )}
 
-            {(userTurns > 0 || assistantTurns > 0) && (
-              <StatRow label="Messages">
-                <span>
-                  {userTurns} user · {assistantTurns} claude
-                </span>
-                {visibleMessages != null && (
-                  <span className="text-muted-foreground/50">{visibleMessages} visible</span>
-                )}
-              </StatRow>
-            )}
-
-            {(meta?.compactions ?? 0) > 0 && (
-              <StatRow label="Compactions">
-                <span>{meta!.compactions}</span>
-              </StatRow>
-            )}
-
-            {/* Activity — only while streaming */}
-            {state === "streaming" &&
-              ((meta?.activeShells ?? 0) > 0 || (meta?.activeAgents ?? 0) > 0) && (
-                <StatRow label="Activity">
-                  {(meta?.activeShells ?? 0) > 0 && (
-                    <span className="flex items-center gap-1">
-                      <ActivitySpinner />
-                      {meta!.activeShells} shell{meta!.activeShells! > 1 ? "s" : ""}
-                    </span>
-                  )}
-                  {(meta?.activeAgents ?? 0) > 0 && (
-                    <span className="flex items-center gap-1">
-                      <ActivitySpinner />
-                      {meta!.activeAgents} agent{meta!.activeAgents! > 1 ? "s" : ""}
-                    </span>
+              {(userTurns > 0 || assistantTurns > 0) && (
+                <StatRow label="Messages">
+                  <span>
+                    {userTurns} user · {assistantTurns} claude
+                  </span>
+                  {visibleMessages != null && (
+                    <span className="text-muted-foreground/50">{visibleMessages} visible</span>
                   )}
                 </StatRow>
               )}
-          </SidebarGroup>
-        </>
-      )}
 
-      {/* Configs browser */}
-      <div className="-mx-4 border-t border-border" />
-      <ConfigBrowser />
+              {(meta?.compactions ?? 0) > 0 && (
+                <StatRow label="Compactions">
+                  <span>{meta!.compactions}</span>
+                </StatRow>
+              )}
+
+              {/* Activity — only while streaming */}
+              {state === "streaming" &&
+                ((meta?.activeShells ?? 0) > 0 || (meta?.activeAgents ?? 0) > 0) && (
+                  <StatRow label="Activity">
+                    {(meta?.activeShells ?? 0) > 0 && (
+                      <span className="flex items-center gap-1">
+                        <ActivitySpinner />
+                        {meta!.activeShells} shell{meta!.activeShells! > 1 ? "s" : ""}
+                      </span>
+                    )}
+                    {(meta?.activeAgents ?? 0) > 0 && (
+                      <span className="flex items-center gap-1">
+                        <ActivitySpinner />
+                        {meta!.activeAgents} agent{meta!.activeAgents! > 1 ? "s" : ""}
+                      </span>
+                    )}
+                  </StatRow>
+                )}
+            </SidebarGroup>
+          </>
+        )}
+
+        {/* Configs browser */}
+        <div className="-mx-4 border-t border-border" />
+        <ConfigBrowser />
+      </div>
     </div>
   );
 }
@@ -354,6 +407,160 @@ const CONFIG_TYPE_ORDER: ConfigEntry["type"][] = [
   "setting",
 ];
 
+function ConfigEntryButton({
+  entry,
+  isActive,
+  onClick,
+}: {
+  entry: ConfigEntry;
+  isActive: boolean;
+  onClick: () => void;
+}) {
+  // Strip prefix (e.g. "gsd/add-phase.md" → "add-phase.md")
+  const displayName = entry.name.includes("/") ? entry.name.split("/").pop()! : entry.name;
+  return (
+    <button
+      type="button"
+      className={`flex items-center gap-1 rounded-sm px-1 py-0.5 text-left transition-colors hover:bg-accent/50 ${
+        isActive ? "text-foreground" : "text-muted-foreground/60"
+      }`}
+      onClick={onClick}
+      title={`${entry.path} (${entry.scope})`}
+    >
+      <FileText className="h-3 w-3 shrink-0" />
+      <span className="min-w-0 truncate">{displayName}</span>
+      {entry.scope === "global" && (
+        <span className="shrink-0 text-[9px] text-muted-foreground/30">~</span>
+      )}
+    </button>
+  );
+}
+
+function ConfigTypeSection({
+  type,
+  entries,
+  configViewFile,
+  onOpen,
+}: {
+  type: ConfigEntry["type"];
+  entries: ConfigEntry[];
+  configViewFile: { path: string } | null;
+  onOpen: (entry: ConfigEntry) => void;
+}) {
+  const [open, setOpen] = useState(false);
+
+  // Group entries by prefix (e.g. "gsd/" commands)
+  const prefixGroups = new Map<string, ConfigEntry[]>();
+  const ungrouped: ConfigEntry[] = [];
+
+  for (const entry of entries) {
+    const slashIdx = entry.name.indexOf("/");
+    if (slashIdx > 0) {
+      const prefix = entry.name.slice(0, slashIdx);
+      const list = prefixGroups.get(prefix) ?? [];
+      list.push(entry);
+      prefixGroups.set(prefix, list);
+    } else {
+      ungrouped.push(entry);
+    }
+  }
+
+  // Only sub-group if there are 3+ entries with the same prefix
+  const subGroups: Array<{ prefix: string; entries: ConfigEntry[] }> = [];
+  for (const [prefix, items] of prefixGroups) {
+    if (items.length >= 3) {
+      subGroups.push({ prefix, entries: items });
+    } else {
+      ungrouped.push(...items);
+    }
+  }
+
+  const needsCollapse = entries.length > 5;
+
+  return (
+    <div className="flex flex-col gap-0.5">
+      {needsCollapse ? (
+        <button
+          type="button"
+          className="flex items-center gap-0.5 text-[10px] uppercase tracking-wider text-muted-foreground/40 transition-colors hover:text-muted-foreground/60"
+          onClick={() => setOpen(!open)}
+        >
+          {open ? (
+            <ChevronDown className="h-2.5 w-2.5" />
+          ) : (
+            <ChevronRight className="h-2.5 w-2.5" />
+          )}
+          {CONFIG_TYPE_LABELS[type]} ({entries.length})
+        </button>
+      ) : (
+        <span className="text-[10px] uppercase tracking-wider text-muted-foreground/40">
+          {CONFIG_TYPE_LABELS[type]}
+        </span>
+      )}
+      {(!needsCollapse || open) && (
+        <div className="flex flex-col gap-0.5">
+          {ungrouped.map((entry) => (
+            <ConfigEntryButton
+              key={entry.path + entry.name}
+              entry={entry}
+              isActive={configViewFile?.path === entry.path}
+              onClick={() => onOpen(entry)}
+            />
+          ))}
+          {subGroups.map((group) => (
+            <ConfigSubGroup
+              key={group.prefix}
+              prefix={group.prefix}
+              entries={group.entries}
+              configViewFile={configViewFile}
+              onOpen={onOpen}
+            />
+          ))}
+        </div>
+      )}
+    </div>
+  );
+}
+
+function ConfigSubGroup({
+  prefix,
+  entries,
+  configViewFile,
+  onOpen,
+}: {
+  prefix: string;
+  entries: ConfigEntry[];
+  configViewFile: { path: string } | null;
+  onOpen: (entry: ConfigEntry) => void;
+}) {
+  const [open, setOpen] = useState(false);
+  return (
+    <div className="flex flex-col gap-0.5">
+      <button
+        type="button"
+        className="flex items-center gap-0.5 pl-1 text-muted-foreground/40 transition-colors hover:text-muted-foreground/60"
+        onClick={() => setOpen(!open)}
+      >
+        {open ? <ChevronDown className="h-2.5 w-2.5" /> : <ChevronRight className="h-2.5 w-2.5" />}
+        <span>{prefix}/</span>
+        <span className="text-muted-foreground/30">({entries.length})</span>
+      </button>
+      {open && (
+        <div className="pl-2">
+          {entries.map((entry) => (
+            <ConfigEntryButton
+              key={entry.path + entry.name}
+              entry={entry}
+              isActive={configViewFile?.path === entry.path}
+              onClick={() => onOpen(entry)}
+            />
+          ))}
+        </div>
+      )}
+    </div>
+  );
+}
+
 function ConfigBrowser() {
   const selectedWorktreePath = useAppStore((s) => s.selectedWorktreePath);
   const configEntries = useAppStore((s) => s.configEntries);
@@ -373,10 +580,6 @@ function ConfigBrowser() {
     grouped.set(entry.type, list);
   }
 
-  const handleOpen = (entry: ConfigEntry) => {
-    sendMessage({ type: "config.read", filePath: entry.path });
-  };
-
   return (
     <SidebarGroup title="Configs" defaultOpen={false}>
       {configEntries.length === 0 ? (
@@ -384,30 +587,13 @@ function ConfigBrowser() {
       ) : (
         <div className="flex flex-col gap-2">
           {CONFIG_TYPE_ORDER.filter((t) => grouped.has(t)).map((type) => (
-            <div key={type} className="flex flex-col gap-0.5">
-              <span className="text-[10px] uppercase tracking-wider text-muted-foreground/40">
-                {CONFIG_TYPE_LABELS[type]}
-              </span>
-              {grouped.get(type)!.map((entry) => (
-                <button
-                  key={entry.path + entry.name}
-                  type="button"
-                  className={`flex items-center gap-1 rounded-sm px-1 py-0.5 text-left transition-colors hover:bg-accent/50 ${
-                    configViewFile?.path === entry.path
-                      ? "text-foreground"
-                      : "text-muted-foreground/60"
-                  }`}
-                  onClick={() => handleOpen(entry)}
-                  title={`${entry.path} (${entry.scope})`}
-                >
-                  <FileText className="h-3 w-3 shrink-0" />
-                  <span className="min-w-0 truncate">{entry.name}</span>
-                  {entry.scope === "global" && (
-                    <span className="shrink-0 text-[9px] text-muted-foreground/30">~</span>
-                  )}
-                </button>
-              ))}
-            </div>
+            <ConfigTypeSection
+              key={type}
+              type={type}
+              entries={grouped.get(type)!}
+              configViewFile={configViewFile}
+              onOpen={(entry) => sendMessage({ type: "config.read", filePath: entry.path })}
+            />
           ))}
         </div>
       )}
