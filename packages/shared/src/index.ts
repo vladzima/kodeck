@@ -41,6 +41,16 @@ export interface WorktreePRInfo {
   reviewStatus?: "pending" | "approved" | "changes_requested";
 }
 
+export interface WorktreeFileChange {
+  path: string;
+  status: "M" | "A" | "D" | "R" | "?" | "U";
+}
+
+export interface WorktreeCommit {
+  hash: string;
+  message: string;
+}
+
 export interface WorktreeInfo {
   path: string;
   branch: string;
@@ -48,6 +58,9 @@ export interface WorktreeInfo {
   ahead: number;
   behind: number;
   pr?: WorktreePRInfo;
+  staged?: WorktreeFileChange[];
+  unstaged?: WorktreeFileChange[];
+  unpushed?: WorktreeCommit[];
 }
 
 export interface ProjectWithWorktrees extends ProjectConfig {

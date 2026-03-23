@@ -7,6 +7,8 @@ import type {
   ProjectWithWorktrees,
   WorktreeInfo,
   WorktreePRInfo,
+  WorktreeFileChange,
+  WorktreeCommit,
   BranchInfo,
   PRSearchResult,
 } from "@kodeck/shared";
@@ -19,7 +21,14 @@ const execFile = promisify(execFileCb);
 export async function getWorktreeStatus(
   worktreePath: string,
   branch: string,
-): Promise<{ ahead: number; behind: number; pr?: WorktreePRInfo }> {
+): Promise<{
+  ahead: number;
+  behind: number;
+  pr?: WorktreePRInfo;
+  staged: WorktreeFileChange[];
+  unstaged: WorktreeFileChange[];
+  unpushed: WorktreeCommit[];
+}> {
   // ahead/behind
   let ahead = 0;
   let behind = 0;
@@ -93,7 +102,53 @@ export async function getWorktreeStatus(
     // No PR or gh not available
   }
 
-  return { ahead, behind, pr };
+  // File changes (staged + unstaged)
+  const staged: WorktreeFileChange[] = [];
+  const unstaged: WorktreeFileChange[] = [];
+  try {
+    const { stdout } = await execFile("git", ["status", "--porcelain"], { cwd: worktreePath });
+    for (const line of stdout.split("\n")) {
+      if (!line) continue;
+      const x = line[0]; // index (staged)
+      const y = line[1]; // worktree (unstaged)
+      const filePath = line.slice(3).split(" -> ").pop()!; // handle renames
+      if (x && x !== " " && x !== "?") {
+        staged.push({ path: filePath, status: x as WorktreeFileChange["status"] });
+      }
+      if (y && y !== " ") {
+        unstaged.push({
+          path: filePath,
+          status: x === "?" ? "?" : (y as WorktreeFileChange["status"]),
+        });
+      }
+    }
+  } catch {
+    // git status failed
+  }
+
+  // Unpushed commits
+  const unpushed: WorktreeCommit[] = [];
+  if (ahead > 0) {
+    try {
+      const { stdout } = await execFile(
+        "git",
+        ["log", "@{upstream}..HEAD", "--oneline", "--format=%h %s"],
+        { cwd: worktreePath },
+      );
+      for (const line of stdout.trim().split("\n")) {
+        if (!line) continue;
+        const spaceIdx = line.indexOf(" ");
+        unpushed.push({
+          hash: line.slice(0, spaceIdx),
+          message: line.slice(spaceIdx + 1),
+        });
+      }
+    } catch {
+      // no upstream
+    }
+  }
+
+  return { ahead, behind, pr, staged, unstaged, unpushed };
 }
 
 // ── List worktrees ───────────────────────────────────────────────────
@@ -140,6 +195,9 @@ export async function listWorktrees(
         wt.ahead = status.ahead;
         wt.behind = status.behind;
         wt.pr = status.pr;
+        wt.staged = status.staged;
+        wt.unstaged = status.unstaged;
+        wt.unpushed = status.unpushed;
       }),
     );
   }
