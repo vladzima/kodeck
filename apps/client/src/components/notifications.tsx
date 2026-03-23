@@ -8,11 +8,7 @@ export function Notifications() {
   return (
     <div className="fixed bottom-4 right-4 z-50 flex flex-col gap-2">
       {notifications.map((n) => (
-        <NotificationItem
-          key={n.id}
-          notification={n}
-          onDismiss={() => removeNotification(n.id)}
-        />
+        <NotificationItem key={n.id} notification={n} onDismiss={() => removeNotification(n.id)} />
       ))}
     </div>
   );

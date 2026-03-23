@@ -27,5 +27,8 @@ dist-ssr
 .claude/
 .agents/
 
+# Planning docs
+docs/
+
 # Editor
 .zed/

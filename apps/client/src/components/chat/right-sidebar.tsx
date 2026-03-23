@@ -270,58 +270,58 @@ export function RightSidebar({
       {/* Stats — read-only info */}
       {hasStats && (
         <>
-        <div className="-mx-4 border-t border-border" />
-        <SidebarGroup title="Stats">
-          {meta?.contextTokens != null && meta?.contextWindow != null && (
-            <StatRow label="Context">
-              <span className={tokenColorClass(meta.contextTokens, meta.contextWindow)}>
-                {formatTokens(meta.contextTokens)} / {formatTokens(meta.contextWindow)}
-              </span>
-            </StatRow>
-          )}
+          <div className="-mx-4 border-t border-border" />
+          <SidebarGroup title="Stats">
+            {meta?.contextTokens != null && meta?.contextWindow != null && (
+              <StatRow label="Context">
+                <span className={tokenColorClass(meta.contextTokens, meta.contextWindow)}>
+                  {formatTokens(meta.contextTokens)} / {formatTokens(meta.contextWindow)}
+                </span>
+              </StatRow>
+            )}
 
-          {meta?.costUsd != null && (
-            <StatRow label="Cost">
-              <span>${meta.costUsd.toFixed(2)}</span>
-            </StatRow>
-          )}
+            {meta?.costUsd != null && (
+              <StatRow label="Cost">
+                <span>${meta.costUsd.toFixed(2)}</span>
+              </StatRow>
+            )}
 
-          {(userTurns > 0 || assistantTurns > 0) && (
-            <StatRow label="Messages">
-              <span>
-                {userTurns} user · {assistantTurns} claude
-              </span>
-              {visibleMessages != null && (
-                <span className="text-muted-foreground/50">{visibleMessages} visible</span>
-              )}
-            </StatRow>
-          )}
-
-          {(meta?.compactions ?? 0) > 0 && (
-            <StatRow label="Compactions">
-              <span>{meta!.compactions}</span>
-            </StatRow>
-          )}
-
-          {/* Activity — only while streaming */}
-          {state === "streaming" &&
-            ((meta?.activeShells ?? 0) > 0 || (meta?.activeAgents ?? 0) > 0) && (
-              <StatRow label="Activity">
-                {(meta?.activeShells ?? 0) > 0 && (
-                  <span className="flex items-center gap-1">
-                    <ActivitySpinner />
-                    {meta!.activeShells} shell{meta!.activeShells! > 1 ? "s" : ""}
-                  </span>
-                )}
-                {(meta?.activeAgents ?? 0) > 0 && (
-                  <span className="flex items-center gap-1">
-                    <ActivitySpinner />
-                    {meta!.activeAgents} agent{meta!.activeAgents! > 1 ? "s" : ""}
-                  </span>
+            {(userTurns > 0 || assistantTurns > 0) && (
+              <StatRow label="Messages">
+                <span>
+                  {userTurns} user · {assistantTurns} claude
+                </span>
+                {visibleMessages != null && (
+                  <span className="text-muted-foreground/50">{visibleMessages} visible</span>
                 )}
               </StatRow>
             )}
-        </SidebarGroup>
+
+            {(meta?.compactions ?? 0) > 0 && (
+              <StatRow label="Compactions">
+                <span>{meta!.compactions}</span>
+              </StatRow>
+            )}
+
+            {/* Activity — only while streaming */}
+            {state === "streaming" &&
+              ((meta?.activeShells ?? 0) > 0 || (meta?.activeAgents ?? 0) > 0) && (
+                <StatRow label="Activity">
+                  {(meta?.activeShells ?? 0) > 0 && (
+                    <span className="flex items-center gap-1">
+                      <ActivitySpinner />
+                      {meta!.activeShells} shell{meta!.activeShells! > 1 ? "s" : ""}
+                    </span>
+                  )}
+                  {(meta?.activeAgents ?? 0) > 0 && (
+                    <span className="flex items-center gap-1">
+                      <ActivitySpinner />
+                      {meta!.activeAgents} agent{meta!.activeAgents! > 1 ? "s" : ""}
+                    </span>
+                  )}
+                </StatRow>
+              )}
+          </SidebarGroup>
         </>
       )}
     </div>

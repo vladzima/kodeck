@@ -2,13 +2,7 @@ import { useState, useEffect, useRef } from "react";
 import type { PRSearchResult } from "@kodeck/shared";
 import { useAppStore } from "../store.ts";
 import { sendMessage } from "../hooks/use-websocket.ts";
-import {
-  Dialog,
-  DialogContent,
-  DialogHeader,
-  DialogTitle,
-  DialogFooter,
-} from "./ui/dialog.tsx";
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from "./ui/dialog.tsx";
 import { Button } from "./ui/button.tsx";
 import { Input } from "./ui/input.tsx";
 import { ScrollArea } from "./ui/scroll-area.tsx";
@@ -73,7 +67,8 @@ export function WorktreeCreateModal() {
       setBranchFilter("");
       setPrQuery("");
       // Default copy source: the main worktree of the target project (not the globally selected one)
-      const mainWorktree = freshProject?.worktrees.find((w) => w.isMain) ?? freshProject?.worktrees[0];
+      const mainWorktree =
+        freshProject?.worktrees.find((w) => w.isMain) ?? freshProject?.worktrees[0];
       const initialCopyFrom = mainWorktree?.path ?? "";
       setCopyFromPath(initialCopyFrom);
       setCopyPaths(freshProject?.worktreeCopyPaths ?? []);
@@ -153,7 +148,10 @@ export function WorktreeCreateModal() {
     if (!projectId || !canCreate) return;
     setIsCreating(true);
 
-    let source: { type: "new-branch"; name: string; base: string } | { type: "existing-branch"; name: string } | { type: "pr"; number: number };
+    let source:
+      | { type: "new-branch"; name: string; base: string }
+      | { type: "existing-branch"; name: string }
+      | { type: "pr"; number: number };
     if (activeTab === "new-branch") {
       source = { type: "new-branch", name: branchName.trim(), base: baseBranch };
     } else if (activeTab === "existing-branch") {
@@ -174,7 +172,11 @@ export function WorktreeCreateModal() {
   };
 
   const tabLabel = (tab: TabId) =>
-    tab === "new-branch" ? "New Branch" : tab === "existing-branch" ? "Existing Branch" : "Pull Request";
+    tab === "new-branch"
+      ? "New Branch"
+      : tab === "existing-branch"
+        ? "Existing Branch"
+        : "Pull Request";
 
   return (
     <Dialog open={open} onOpenChange={setOpen}>
@@ -383,9 +385,7 @@ export function WorktreeCreateModal() {
           </div>
         </div>
 
-        {createError && (
-          <div className="text-xs text-destructive">{createError}</div>
-        )}
+        {createError && <div className="text-xs text-destructive">{createError}</div>}
 
         <DialogFooter>
           <Button onClick={handleCreate} disabled={isCreating || !canCreate}>
