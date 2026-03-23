@@ -5,6 +5,7 @@ import { EventEmitter } from "node:events";
 import type {
   ChatAttachment,
   ChatSessionState,
+  MessageMeta,
   SessionMeta,
   ToolCallInfo,
   PermissionRequest,
@@ -17,7 +18,7 @@ interface ClaudeSessionEvents {
   tool_result: [toolUseId: string, result: string, isError: boolean];
   permission_request: [permission: PermissionRequest];
   state: [state: ChatSessionState];
-  end: [messageId: string];
+  end: [messageId: string, messageMeta: MessageMeta];
   error: [error: string];
   exit: [code: number | null];
   slash_commands: [commands: string[]];
@@ -37,6 +38,7 @@ export class ClaudeSession extends EventEmitter<ClaudeSessionEvents> {
   private lastUserMessageWasCompact = false;
   private emittedTextThisTurn = false;
   private userHasSentMessage = false; // suppress replayed events on resume
+  private effort = "high";
   claudeSessionId: string | null = null;
 
   constructor() {
@@ -87,6 +89,7 @@ export class ClaudeSession extends EventEmitter<ClaudeSessionEvents> {
       args.push("--model", opts.model);
     }
     if (opts?.effort) {
+      this.effort = opts.effort;
       args.push("--effort", opts.effort);
     }
     if (opts?.skipPermissions) {
@@ -259,8 +262,12 @@ export class ClaudeSession extends EventEmitter<ClaudeSessionEvents> {
         this.emittedTextThisTurn = false;
         this.setState("idle");
         this.activeToolCalls.clear();
-        this.emit("end", this.currentMessageId);
-        // Extract token usage from result
+
+        // Extract per-message metadata before emitting end
+        const messageMeta: MessageMeta = {
+          model: this._meta.model,
+          effort: this.effort,
+        };
         if (event.modelUsage) {
           const models = Object.values(event.modelUsage) as Array<{
             inputTokens?: number;
@@ -271,8 +278,10 @@ export class ClaudeSession extends EventEmitter<ClaudeSessionEvents> {
           }>;
           const primary = models[0];
           if (primary) {
-            // Context = conversation tokens only (excludes cached system prompt)
-            // cacheReadInputTokens is the static system prompt — not the user's conversation
+            messageMeta.inputTokens = primary.inputTokens;
+            messageMeta.outputTokens = primary.outputTokens;
+            messageMeta.cacheReadTokens = primary.cacheReadInputTokens;
+            messageMeta.cacheWriteTokens = primary.cacheCreationInputTokens;
             const contextTokens =
               (primary.inputTokens ?? 0) + (primary.cacheCreationInputTokens ?? 0);
             this._meta.contextTokens = contextTokens;
@@ -282,8 +291,12 @@ export class ClaudeSession extends EventEmitter<ClaudeSessionEvents> {
           }
         }
         if (event.total_cost_usd != null) {
+          messageMeta.costUsd = event.total_cost_usd;
           this._meta.costUsd = event.total_cost_usd;
         }
+
+        this.emit("end", this.currentMessageId, messageMeta);
+
         if (this.lastUserMessageWasCompact) {
           this._meta.compactions = (this._meta.compactions ?? 0) + 1;
           this.lastUserMessageWasCompact = false;

@@ -68,7 +68,11 @@ interface AppState {
   ) => void;
   addUserMessage: (sessionId: string, text: string, attachments?: ChatAttachment[]) => void;
   setChatState: (sessionId: string, state: ChatSessionState) => void;
-  finishAssistantMessage: (sessionId: string, messageId: string) => void;
+  finishAssistantMessage: (
+    sessionId: string,
+    messageId: string,
+    messageMeta?: import("@kodeck/shared").MessageMeta,
+  ) => void;
 
   // Slash commands
   slashCommands: Map<string, string[]>;
@@ -434,13 +438,13 @@ export const useAppStore = create<AppState>((set) => ({
       return { chatData };
     }),
 
-  finishAssistantMessage: (sessionId, _messageId) =>
+  finishAssistantMessage: (sessionId, _messageId, messageMeta) =>
     set((state) => {
       const chatData = new Map(state.chatData);
       const data = getOrCreateChatData(chatData, sessionId);
       const messages = data.messages.map((msg) => {
         if (msg.role === "assistant" && msg.isStreaming) {
-          return { ...msg, isStreaming: false };
+          return { ...msg, isStreaming: false, meta: messageMeta };
         }
         return msg;
       });

@@ -369,14 +369,15 @@ function wireClaudeSession(sessionId: string, session: ClaudeSession): void {
     }
     broadcast({ type: "chat.state", sessionId, state });
   });
-  session.on("end", (messageId) => {
-    broadcast({ type: "chat.end", sessionId, messageId });
+  session.on("end", (messageId, messageMeta) => {
+    broadcast({ type: "chat.end", sessionId, messageId, messageMeta });
     sessionPendingPermissions.delete(sessionId);
     // Finalize and persist
     const messages = sessionMessages.get(sessionId)!;
     const last = messages[messages.length - 1];
     if (last && last.role === "assistant") {
       last.isStreaming = false;
+      last.meta = messageMeta;
     }
     updateSessionMessages(sessionId, messages).catch(console.error);
   });

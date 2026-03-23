@@ -84,7 +84,7 @@ function handleServerMessage(msg: ServerMessage): void {
       break;
 
     case "chat.end":
-      state.finishAssistantMessage(msg.sessionId, msg.messageId);
+      state.finishAssistantMessage(msg.sessionId, msg.messageId, msg.messageMeta);
       break;
 
     case "chat.slash_commands":

@@ -102,6 +102,16 @@ export type AssistantContentBlock =
   | { type: "text"; text: string }
   | { type: "tool_call"; toolCall: ToolCallInfo };
 
+export interface MessageMeta {
+  model?: string;
+  effort?: string;
+  inputTokens?: number;
+  outputTokens?: number;
+  cacheReadTokens?: number;
+  cacheWriteTokens?: number;
+  costUsd?: number;
+}
+
 export interface ChatAssistantMessage {
   role: "assistant";
   text: string;
@@ -110,6 +120,7 @@ export interface ChatAssistantMessage {
   thinking?: string;
   isStreaming: boolean;
   timestamp?: number;
+  meta?: MessageMeta;
 }
 
 export type ChatMessage = ChatUserMessage | ChatAssistantMessage;
@@ -390,6 +401,7 @@ export interface ChatEndEvent {
   type: "chat.end";
   sessionId: string;
   messageId: string;
+  messageMeta?: MessageMeta;
 }
 
 export interface TerminalOutputEvent {
