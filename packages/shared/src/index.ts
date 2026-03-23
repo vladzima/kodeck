@@ -328,7 +328,27 @@ export type ClientMessage =
   | DialogPickFolderMessage
   | SessionListMessage
   | DebugListProcessesMessage
-  | DebugKillProcessMessage;
+  | DebugKillProcessMessage
+  | ConfigScanMessage
+  | ConfigReadMessage;
+
+export interface ConfigScanMessage {
+  type: "config.scan";
+  worktreePath: string;
+}
+
+export interface ConfigReadMessage {
+  type: "config.read";
+  filePath: string;
+}
+
+export interface ConfigEntry {
+  name: string;
+  path: string;
+  type: "claude-md" | "skill" | "agent" | "command" | "hook" | "mcp" | "setting";
+  scope: "project" | "global";
+  size: number;
+}
 
 // ============================================
 // Server → Client messages
@@ -536,4 +556,17 @@ export type ServerMessage =
   | WorktreeBranchListEvent
   | WorktreePRListEvent
   | WorktreeCopyPathsEvent
-  | WorktreeOperationResultEvent;
+  | WorktreeOperationResultEvent
+  | ConfigScanResultEvent
+  | ConfigReadResultEvent;
+
+export interface ConfigScanResultEvent {
+  type: "config.scanResult";
+  entries: ConfigEntry[];
+}
+
+export interface ConfigReadResultEvent {
+  type: "config.readResult";
+  filePath: string;
+  content: string;
+}

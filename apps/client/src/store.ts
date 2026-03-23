@@ -7,6 +7,7 @@ import type {
   ChatSessionState,
   ChatUserMessage,
   ClaudeProcessInfo,
+  ConfigEntry,
   EffortLevel,
   PRSearchResult,
   PermissionRequest,
@@ -144,6 +145,14 @@ interface AppState {
   setSearchResults: (results: SearchResult[]) => void;
   scrollToMessage: { sessionId: string; messageIndex: number } | null;
   setScrollToMessage: (target: { sessionId: string; messageIndex: number } | null) => void;
+
+  // Config browser
+  configEntries: ConfigEntry[];
+  setConfigEntries: (entries: ConfigEntry[]) => void;
+  configViewFile: { path: string; content: string } | null;
+  setConfigViewFile: (file: { path: string; content: string } | null) => void;
+  configTabSelected: boolean;
+  setConfigTabSelected: (selected: boolean) => void;
 }
 
 export interface SearchResult {
@@ -583,4 +592,12 @@ export const useAppStore = create<AppState>((set) => ({
   setSearchResults: (results) => set({ searchResults: results }),
   scrollToMessage: null,
   setScrollToMessage: (target) => set({ scrollToMessage: target }),
+
+  // Config browser
+  configEntries: [],
+  setConfigEntries: (entries) => set({ configEntries: entries }),
+  configViewFile: null,
+  setConfigViewFile: (file) => set({ configViewFile: file, configTabSelected: !!file }),
+  configTabSelected: false,
+  setConfigTabSelected: (selected) => set({ configTabSelected: selected }),
 }));

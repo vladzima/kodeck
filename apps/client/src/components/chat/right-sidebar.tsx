@@ -1,7 +1,9 @@
 import { useState, useRef, useEffect } from "react";
-import { ChevronDown, Gauge, Radio, Shield } from "lucide-react";
+import { ChevronDown, FileText, Gauge, Radio, Shield } from "lucide-react";
 import spinners from "cli-spinners";
-import type { ChatSessionState, EffortLevel, SessionMeta } from "@kodeck/shared";
+import type { ChatSessionState, ConfigEntry, EffortLevel, SessionMeta } from "@kodeck/shared";
+import { useAppStore } from "../../store.ts";
+import { sendMessage } from "../../hooks/use-websocket.ts";
 
 const agentSpinner = spinners.dots8Bit;
 
@@ -324,6 +326,91 @@ export function RightSidebar({
           </SidebarGroup>
         </>
       )}
+
+      {/* Configs browser */}
+      <div className="-mx-4 border-t border-border" />
+      <ConfigBrowser />
     </div>
+  );
+}
+
+const CONFIG_TYPE_LABELS: Record<ConfigEntry["type"], string> = {
+  "claude-md": "CLAUDE.md",
+  skill: "Skills",
+  agent: "Agents",
+  command: "Commands",
+  hook: "Hooks",
+  mcp: "MCPs",
+  setting: "Settings",
+};
+
+const CONFIG_TYPE_ORDER: ConfigEntry["type"][] = [
+  "claude-md",
+  "skill",
+  "command",
+  "agent",
+  "hook",
+  "mcp",
+  "setting",
+];
+
+function ConfigBrowser() {
+  const selectedWorktreePath = useAppStore((s) => s.selectedWorktreePath);
+  const configEntries = useAppStore((s) => s.configEntries);
+  const configViewFile = useAppStore((s) => s.configViewFile);
+
+  useEffect(() => {
+    if (selectedWorktreePath) {
+      sendMessage({ type: "config.scan", worktreePath: selectedWorktreePath });
+    }
+  }, [selectedWorktreePath]);
+
+  // Group entries by type
+  const grouped = new Map<ConfigEntry["type"], ConfigEntry[]>();
+  for (const entry of configEntries) {
+    const list = grouped.get(entry.type) ?? [];
+    list.push(entry);
+    grouped.set(entry.type, list);
+  }
+
+  const handleOpen = (entry: ConfigEntry) => {
+    sendMessage({ type: "config.read", filePath: entry.path });
+  };
+
+  return (
+    <SidebarGroup title="Configs" defaultOpen={false}>
+      {configEntries.length === 0 ? (
+        <span className="text-muted-foreground/30">No configs found</span>
+      ) : (
+        <div className="flex flex-col gap-2">
+          {CONFIG_TYPE_ORDER.filter((t) => grouped.has(t)).map((type) => (
+            <div key={type} className="flex flex-col gap-0.5">
+              <span className="text-[10px] uppercase tracking-wider text-muted-foreground/40">
+                {CONFIG_TYPE_LABELS[type]}
+              </span>
+              {grouped.get(type)!.map((entry) => (
+                <button
+                  key={entry.path + entry.name}
+                  type="button"
+                  className={`flex items-center gap-1 rounded-sm px-1 py-0.5 text-left transition-colors hover:bg-accent/50 ${
+                    configViewFile?.path === entry.path
+                      ? "text-foreground"
+                      : "text-muted-foreground/60"
+                  }`}
+                  onClick={() => handleOpen(entry)}
+                  title={`${entry.path} (${entry.scope})`}
+                >
+                  <FileText className="h-3 w-3 shrink-0" />
+                  <span className="min-w-0 truncate">{entry.name}</span>
+                  {entry.scope === "global" && (
+                    <span className="shrink-0 text-[9px] text-muted-foreground/30">~</span>
+                  )}
+                </button>
+              ))}
+            </div>
+          ))}
+        </div>
+      )}
+    </SidebarGroup>
   );
 }

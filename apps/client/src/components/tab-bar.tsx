@@ -1,5 +1,5 @@
 import { useEffect, useState, useRef } from "react";
-import { Bug, MessageSquare, Plus, Search, TerminalIcon, X } from "lucide-react";
+import { Bug, FileText, MessageSquare, Plus, Search, TerminalIcon, X } from "lucide-react";
 import { DEFAULT_MODEL } from "@kodeck/shared";
 import { useAppStore } from "../store.ts";
 import { sendMessage } from "../hooks/use-websocket.ts";
@@ -43,6 +43,10 @@ export function TabBar() {
     searchTabSelected,
     setSearchTabSelected,
     searchResults,
+    configViewFile,
+    configTabSelected,
+    setConfigTabSelected,
+    setConfigViewFile,
   } = useAppStore();
 
   const worktreeSessions = sessions.filter((s) => s.worktreePath === selectedWorktreePath);
@@ -95,13 +99,14 @@ export function TabBar() {
           role="tab"
           tabIndex={0}
           className={`group flex h-full cursor-pointer items-center gap-1.5 px-2.5 text-sm transition-colors ${
-            activeSessionId === session.id && !searchTabSelected
+            activeSessionId === session.id && !searchTabSelected && !configTabSelected
               ? "text-foreground border-b-2 border-primary"
               : "text-muted-foreground hover:text-foreground/70"
           }`}
           onClick={() => {
             setActiveSession(session.id);
             setSearchTabSelected(false);
+            setConfigTabSelected(false);
           }}
           onKeyDown={(e) => {
             if (e.key === "Enter" || e.key === " ") setActiveSession(session.id);
@@ -136,7 +141,10 @@ export function TabBar() {
               ? "text-foreground border-b-2 border-primary"
               : "text-muted-foreground hover:text-foreground/70"
           }`}
-          onClick={() => setSearchTabSelected(true)}
+          onClick={() => {
+            setSearchTabSelected(true);
+            setConfigTabSelected(false);
+          }}
           onKeyDown={(e) => {
             if (e.key === "Enter" || e.key === " ") setSearchTabSelected(true);
           }}
@@ -159,6 +167,38 @@ export function TabBar() {
               s.setSearchOpen(false);
               s.setSearchQuery("");
               s.setSearchResults([]);
+            }}
+          >
+            <X className="h-3 w-3" />
+          </button>
+        </div>
+      )}
+      {configViewFile && (
+        <div
+          role="tab"
+          tabIndex={0}
+          className={`group flex h-full cursor-pointer items-center gap-1.5 px-2.5 text-sm transition-colors ${
+            configTabSelected
+              ? "text-foreground border-b-2 border-primary"
+              : "text-muted-foreground hover:text-foreground/70"
+          }`}
+          onClick={() => {
+            setConfigTabSelected(true);
+            setSearchTabSelected(false);
+          }}
+          onKeyDown={(e) => {
+            if (e.key === "Enter" || e.key === " ") setConfigTabSelected(true);
+          }}
+        >
+          <FileText className="h-3.5 w-3.5 shrink-0" />
+          <span className="max-w-32 truncate">{configViewFile.path.split("/").pop()}</span>
+          <button
+            type="button"
+            className="cursor-pointer rounded-sm p-0.5 text-muted-foreground/50 transition-colors hover:bg-foreground/10 hover:text-foreground"
+            onClick={(e) => {
+              e.stopPropagation();
+              setConfigViewFile(null);
+              setConfigTabSelected(false);
             }}
           >
             <X className="h-3 w-3" />

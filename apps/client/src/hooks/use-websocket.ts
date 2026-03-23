@@ -167,6 +167,14 @@ function handleServerMessage(msg: ServerMessage): void {
       }
       break;
 
+    case "config.scanResult":
+      state.setConfigEntries(msg.entries);
+      break;
+
+    case "config.readResult":
+      state.setConfigViewFile({ path: msg.filePath, content: msg.content });
+      break;
+
     case "error":
       console.error("[kodeck] Server error:", msg.message);
       break;

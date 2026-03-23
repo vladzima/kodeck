@@ -26,6 +26,7 @@ import {
   listWorktrees,
 } from "./projects.ts";
 import { loadConfig, updateProjectCopyPaths } from "./config.ts";
+import { scanConfigs, readConfigFile } from "./config-scanner.ts";
 import type { SessionMeta } from "@kodeck/shared";
 import {
   loadPersistedSessions,
@@ -1030,6 +1031,18 @@ export async function handleMessage(ws: WebSocket, raw: string): Promise<void> {
           .catch(() => {
             send(ws, { type: "dialog.folderPicked", path: null });
           });
+        break;
+      }
+
+      case "config.scan": {
+        const result = await scanConfigs(msg.worktreePath);
+        send(ws, { type: "config.scanResult", entries: result.entries });
+        break;
+      }
+
+      case "config.read": {
+        const content = await readConfigFile(msg.filePath);
+        send(ws, { type: "config.readResult", filePath: msg.filePath, content });
         break;
       }
     }
