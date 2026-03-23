@@ -149,8 +149,8 @@ interface AppState {
   // Config browser
   configEntries: ConfigEntry[];
   setConfigEntries: (entries: ConfigEntry[]) => void;
-  configViewFile: { path: string; content: string } | null;
-  setConfigViewFile: (file: { path: string; content: string } | null) => void;
+  configViewFile: { path: string; name: string; content: string } | null;
+  setConfigViewFile: (file: { path: string; name: string; content: string } | null) => void;
   configTabSelected: boolean;
   setConfigTabSelected: (selected: boolean) => void;
 }

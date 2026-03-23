@@ -3,6 +3,7 @@ import { ChatView } from "./chat/chat-view.tsx";
 import { TerminalView } from "./terminal/terminal-view.tsx";
 import { SearchResultsView } from "./search-results.tsx";
 import { ConfigFileView } from "./config-view.tsx";
+import { ConfigSidebar, ConfigList } from "./config-sidebar.tsx";
 
 export function MainPanel() {
   const { sessions, activeSessionId, selectedWorktreePath } = useAppStore();
@@ -35,8 +36,11 @@ export function MainPanel() {
         </div>
       )}
       {configTabSelected && (
-        <div className="absolute inset-0">
-          <ConfigFileView />
+        <div className="absolute inset-0 flex">
+          <div className="flex-1 overflow-hidden">
+            <ConfigFileView />
+          </div>
+          <ConfigSidebar />
         </div>
       )}
       {worktreeSessions.map((session) => {
@@ -48,7 +52,21 @@ export function MainPanel() {
             </div>
           );
         }
-        return <TerminalView key={session.id} sessionId={session.id} isActive={isActive} />;
+        return (
+          <div key={session.id} className={`absolute inset-0 flex ${isActive ? "" : "hidden"}`}>
+            <div className="flex-1 overflow-hidden">
+              <TerminalView sessionId={session.id} isActive={isActive} />
+            </div>
+            <div className="flex w-44 shrink-0 flex-col border-l border-border px-4 py-4 text-xs font-mono text-muted-foreground overflow-y-auto">
+              <span className="text-[11px] font-medium uppercase tracking-wider text-foreground">
+                Configs
+              </span>
+              <div className="mt-2">
+                <ConfigList />
+              </div>
+            </div>
+          </div>
+        );
       })}
     </div>
   );
