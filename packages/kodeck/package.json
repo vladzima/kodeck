@@ -1,6 +1,6 @@
 {
   "name": "kodeck-app",
-  "version": "0.2.1",
+  "version": "0.2.2",
   "description": "Open-source IDE for Claude Code — multi-project workspace with chat, terminals, and git worktree management",
   "type": "module",
   "bin": {

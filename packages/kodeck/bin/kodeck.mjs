@@ -25,13 +25,16 @@ async function printBanner(url) {
   }
 
   process.stdout.write("\n  ");
-  await sleep(120);
-  process.stdout.write(amber("❯"));
-  await sleep(150);
+  await sleep(300);
   process.stdout.write(amberDim("❯"));
-  await sleep(120);
+  await sleep(200);
+  process.stdout.write("\x1b[1D");
+  process.stdout.write(amber("❯"));
+  await sleep(400);
+  process.stdout.write(amberDim("❯"));
+  await sleep(200);
   process.stdout.write(`  ${boldCyan("kodeck")} ${dim(`v${pkg.version}`)}\n`);
-  await sleep(80);
+  await sleep(200);
   console.log("");
   console.log(`  ${green("➜")}  ${bold("Local:")}   ${cyan(url)}`);
   console.log("");

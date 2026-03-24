@@ -48,9 +48,9 @@ export function startServer(
           const addr = httpServer.address();
           const actualPort = typeof addr === "object" && addr ? addr.port : 0;
           if (clientDir) {
-            console.log(`kodeck running at http://localhost:${actualPort}`);
+            if (!process.env.KODECK_LIB_MODE) console.log(`kodeck running at http://localhost:${actualPort}`);
           } else {
-            console.log(`kodeck server listening on ws://localhost:${actualPort}/ws`);
+            if (!process.env.KODECK_LIB_MODE) console.log(`kodeck server listening on ws://localhost:${actualPort}/ws`);
           }
           resolve({
             port: actualPort,
@@ -68,9 +68,9 @@ export function startServer(
 
     httpServer.listen(port, () => {
       if (clientDir) {
-        console.log(`kodeck running at http://localhost:${port}`);
+        if (!process.env.KODECK_LIB_MODE) console.log(`kodeck running at http://localhost:${port}`);
       } else {
-        console.log(`kodeck server listening on ws://localhost:${port}/ws`);
+        if (!process.env.KODECK_LIB_MODE) console.log(`kodeck server listening on ws://localhost:${port}/ws`);
       }
       resolve({
         port,
