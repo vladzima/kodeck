@@ -27,6 +27,13 @@ dist-ssr
 .claude/
 .agents/
 
+# Tauri
+apps/desktop/src-tauri/target/
+apps/desktop/src-tauri/binaries/kodeck-server-*
+apps/desktop/src-tauri/binaries/node_modules/
+apps/desktop/src-tauri/gen/
+apps/server/dist/
+
 # Planning docs
 docs/
 

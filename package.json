@@ -5,7 +5,9 @@
   "type": "module",
   "scripts": {
     "ready": "vp fmt && vp lint && vp run test -r && vp run build -r",
-    "dev": "concurrently -n server,client -c blue,green \"vp run server#dev\" \"vp run client#dev\""
+    "dev": "concurrently -n server,client -c blue,green \"vp run server#dev\" \"vp run client#dev\"",
+    "tauri:dev": "pnpm --filter @kodeck/desktop tauri dev",
+    "tauri:build": "pnpm --filter @kodeck/server build:sidecar && pnpm --filter @kodeck/desktop tauri build && node scripts/patch-app-bundle.mjs"
   },
   "dependencies": {
     "@fontsource-variable/geist-mono": "^5.2.7"

@@ -4,7 +4,8 @@
   "private": true,
   "type": "module",
   "scripts": {
-    "dev": "node --watch --import tsx/esm src/index.ts"
+    "dev": "node --watch --import tsx/esm src/index.ts",
+    "build:sidecar": "node scripts/build-sidecar.mjs"
   },
   "dependencies": {
     "@kodeck/shared": "workspace:*",

@@ -188,8 +188,12 @@ function handleServerMessage(msg: ServerMessage): void {
 }
 
 function connect(): void {
+  // In Tauri, the frontend is served via tauri:// protocol so we connect directly to the sidecar
+  const isTauri = "__TAURI_INTERNALS__" in window;
   const protocol = window.location.protocol === "https:" ? "wss:" : "ws:";
-  const url = `${protocol}//${window.location.host}/ws`;
+  const url = isTauri
+    ? "ws://localhost:3001/ws"
+    : `${protocol}//${window.location.host}/ws`;
   const ws = new WebSocket(url);
   wsInstance = ws;
 
