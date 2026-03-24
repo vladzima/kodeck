@@ -5,7 +5,7 @@ Open-source IDE for [Claude Code](https://docs.anthropic.com/en/docs/claude-code
 ## Quick Start
 
 ```bash
-npx kodeck
+npx kodeck-app
 ```
 
 Requires Node.js 22+ and an active [Claude Code](https://docs.anthropic.com/en/docs/claude-code) authentication (OAuth).

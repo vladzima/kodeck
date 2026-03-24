@@ -15,13 +15,13 @@ const server = await startServer();
 const url = `http://localhost:${server.port}`;
 console.log(`\nOpen ${url} in your browser to get started.\n`);
 
-const open =
+const openCmd =
   process.platform === "darwin"
     ? "open"
     : process.platform === "win32"
       ? "start"
       : "xdg-open";
-exec(`${open} ${url}`);
+exec(`${openCmd} ${url}`);
 
 process.on("SIGINT", () => {
   console.log("\nShutting down...");
