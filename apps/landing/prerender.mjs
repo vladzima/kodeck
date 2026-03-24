@@ -1,23 +1,24 @@
-import { build } from "vite";
+import { build } from "esbuild";
 import { readFileSync, writeFileSync, rmSync } from "node:fs";
 import { resolve, dirname } from "node:path";
 import { fileURLToPath } from "node:url";
 
 const __dirname = dirname(fileURLToPath(import.meta.url));
 
-// 1. SSR build — compile entry-server.tsx to a Node-compatible module
+// 1. Bundle entry-server.tsx for Node.js using esbuild
 await build({
-  configFile: resolve(__dirname, "vite.config.ts"),
-  build: {
-    ssr: "src/entry-server.tsx",
-    outDir: "dist/server",
-    emptyOutDir: true,
-  },
-  logLevel: "warn",
+  entryPoints: [resolve(__dirname, "src/entry-server.tsx")],
+  bundle: true,
+  format: "esm",
+  platform: "node",
+  outfile: resolve(__dirname, "dist/server/entry-server.mjs"),
+  packages: "external",
+  jsx: "automatic",
+  jsxImportSource: "react",
 });
 
 // 2. Import the SSR module and render the app to HTML
-const { render } = await import("./dist/server/entry-server.js");
+const { render } = await import("./dist/server/entry-server.mjs");
 const appHtml = render();
 
 // 3. Inject rendered HTML into the client build's index.html
