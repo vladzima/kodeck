@@ -18,6 +18,9 @@ const amberDim = (s) => `\x1b[2;38;2;196;162;97m${s}\x1b[0m`;
 
 const sleep = (ms) => new Promise((r) => setTimeout(r, ms));
 
+let ttyFd = null;
+let animationTimer = null;
+
 function openTTY() {
   try {
     return openSync("/dev/tty", "w");
@@ -26,19 +29,53 @@ function openTTY() {
   }
 }
 
-async function printBanner(url) {
-  const fd = openTTY();
+function chevronLine(bright1, bright2) {
+  const c1 = bright1 ? amber("❯") : amberDim("❯");
+  const c2 = bright2 ? amber("❯") : amberDim("❯");
+  return `  ${c1}${c2} ${boldCyan("kodeck")} ${dim(`v${pkg.version}`)}`;
+}
 
-  if (!fd) {
-    // No TTY available (CI, piped, etc.) — plain text fallback
-    console.log(`\n  ❯❯  kodeck v${pkg.version}\n\n  ➜  Local:   ${url}\n`);
+// Chevron line is 4 rows above final cursor position
+function redrawChevrons(bright1, bright2) {
+  if (!ttyFd) return;
+  writeSync(ttyFd, `\x1b[s\x1b[4A\x1b[2K\r${chevronLine(bright1, bright2)}\x1b[u`);
+}
+
+function startAnimation() {
+  if (!ttyFd) return;
+  let frame = 0;
+  animationTimer = setInterval(() => {
+    const f = frame % 2;
+    redrawChevrons(f === 0, f === 1);
+    frame++;
+  }, 800);
+}
+
+function stopAnimation() {
+  if (animationTimer) {
+    clearInterval(animationTimer);
+    animationTimer = null;
+  }
+  if (ttyFd) {
+    redrawChevrons(true, true); // final state: both bright
+    writeSync(ttyFd, dim("\n  Shutting down...\n") + "\n");
+    closeSync(ttyFd);
+    ttyFd = null;
+  }
+}
+
+async function printBanner(url) {
+  ttyFd = openTTY();
+
+  if (!ttyFd) {
+    console.log(`\n  ❯❯ kodeck v${pkg.version}\n\n  ➜  Local:   ${url}\n`);
     return;
   }
 
-  const w = (s) => writeSync(fd, s);
-  const cl = "\x1b[2K\r"; // clear line + carriage return
+  const w = (s) => writeSync(ttyFd, s);
+  const cl = "\x1b[2K\r";
 
-  w("\n"); // blank line
+  w("\n");
   await sleep(400);
 
   // First chevron fades in dim
@@ -54,12 +91,13 @@ async function printBanner(url) {
   await sleep(350);
 
   // Both bright + title appears
-  w(`${cl}  ${amber("❯❯")}  ${boldCyan("kodeck")} ${dim(`v${pkg.version}`)}\n`);
+  w(`${cl}${chevronLine(true, true)}\n`);
   await sleep(250);
 
   w(`\n  ${green("➜")}  ${bold("Local:")}   ${cyan(url)}\n\n`);
 
-  closeSync(fd);
+  // Start continuous chevron animation
+  startAnimation();
 }
 
 // Second invocation — portless has set PORT and PORTLESS_URL
@@ -78,11 +116,7 @@ if (process.env.PORTLESS_URL) {
   exec(`${openCmd} ${url}`);
 
   process.on("SIGINT", () => {
-    const fd = openTTY();
-    if (fd) {
-      writeSync(fd, dim("\n  Shutting down...\n") + "\n");
-      closeSync(fd);
-    }
+    stopAnimation();
     server.close();
     process.exit(0);
   });
