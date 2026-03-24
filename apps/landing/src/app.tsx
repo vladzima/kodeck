@@ -1350,9 +1350,12 @@ export function App() {
                   <path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1" />
                 </svg>
               </button>
+              <span className="font-mono text-[11px] tracking-wider text-muted-foreground/40 uppercase">
+                Early alpha
+              </span>
               <span
                 id="copy-ok"
-                className="text-xs text-primary-bright transition-opacity duration-300"
+                className="absolute ml-2 text-xs text-primary-bright transition-opacity duration-300"
                 style={{ opacity: 0 }}
               >
                 Copied!

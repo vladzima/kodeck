@@ -1,0 +1,40 @@
+# Kodeck
+
+> Your command center for Claude Code — a multi-project IDE built around the Claude CLI.
+
+Kodeck is an open-source, MIT-licensed application that provides a graphical interface for Claude Code. It allows developers to manage multiple projects, git worktrees, chat sessions, and terminals in a unified workspace.
+
+## Quick Start
+
+Run `npx kodeck-app` to start Kodeck. Requires Node.js 22+ and Claude Code authentication (OAuth via `claude login`).
+
+## Features
+
+- Multi-Project Workspace: Register multiple repositories and navigate projects, worktrees, and branches from a unified sidebar.
+- Built for Claude Code: Deep CLI integration with streaming responses, tool call cards, and permission prompts rendered natively.
+- Advanced Search: Search across all sessions, messages, and projects instantly.
+- Config Browser: Visual read-only view of Claude configurations, permissions, and hooks.
+- Terminal + Chat Split: Side-by-side terminal and chat panels for seamless workflow.
+- Cross-Platform: Available as a browser app or native macOS desktop application via Tauri.
+- Free & Open Source: MIT licensed. No telemetry, no accounts, no paywalls.
+- DX First: Keyboard-driven, fast renders, zero config to start.
+
+## Roadmap
+
+- Smart Recommendations: Context-aware suggestions that learn your workflow.
+- Telegram Integration: Monitor sessions and interact with Claude directly from Telegram.
+- Intelligent Plugins: On-the-fly plugin recommendations tailored to your current context.
+
+## Tech Stack
+
+- Frontend: React, Vite, Tailwind CSS v4, xterm.js
+- Backend: Hono (HTTP + WebSocket server)
+- Desktop: Tauri (native macOS app)
+- npm package: kodeck-app
+
+## Links
+
+- Source: https://github.com/vladzima/kodeck
+- npm: https://www.npmjs.com/package/kodeck-app
+- Website: https://kodeck.dev
+- Author: Vlad Arbatov (https://github.com/vladzima)

@@ -5,7 +5,7 @@
   "type": "module",
   "scripts": {
     "dev": "vp dev",
-    "build": "tsc && vp build",
+    "build": "tsc && vp build && node prerender.mjs",
     "preview": "vp preview"
   },
   "dependencies": {
