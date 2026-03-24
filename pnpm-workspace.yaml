@@ -4,6 +4,8 @@ packages:
   - tools/*
 
 catalog:
+  '@hugeicons/react': ^1.1.6
+  '@paper-design/shaders-react': ^0.0.72
   "@tailwindcss/vite": ^4.2.2
   "@types/node": ^24
   "@types/react": ^19.2.14
@@ -13,6 +15,7 @@ catalog:
   "@xterm/addon-webgl": ^0.19.0
   "@xterm/xterm": ^6.0.0
   concurrently: ^9.2.1
+  geist: ^1.7.0
   react: ^19.2.4
   react-dom: ^19.2.4
   tailwindcss: ^4.2.2

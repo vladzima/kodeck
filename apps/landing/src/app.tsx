@@ -1,4 +1,5 @@
 import { useEffect, useState } from "react";
+import { Dithering, GrainGradient } from "@paper-design/shaders-react";
 import {
   Terminal,
   ChevronRight,
@@ -6,9 +7,6 @@ import {
   FolderGit2,
   MessageSquare,
   ChevronDown,
-  Sparkles,
-  Send,
-  Puzzle,
 } from "lucide-react";
 
 /* ── scroll reveal hook ── */
@@ -585,10 +583,18 @@ function KodeckLogo({ size = 28 }: { size?: number }) {
 
 /* ── nav ── */
 function Nav() {
+  const [scrolled, setScrolled] = useState(false);
+  useEffect(() => {
+    const onScroll = () => setScrolled(window.scrollY > 20);
+    onScroll();
+    window.addEventListener("scroll", onScroll, { passive: true });
+    return () => window.removeEventListener("scroll", onScroll);
+  }, []);
+
   return (
     <nav
-      className="fixed top-0 right-0 left-0 z-50 bg-background/80 backdrop-blur-xl"
-      style={{ borderBottom: "1px solid oklch(100% 0 0 / 0.06)" }}
+      className={`fixed top-0 right-0 left-0 z-50 transition-[background-color,border-color,backdrop-filter] duration-300 ${scrolled ? "bg-background/80 backdrop-blur-xl" : ""}`}
+      style={{ borderBottom: scrolled ? "1px solid oklch(100% 0 0 / 0.06)" : "1px solid transparent" }}
     >
       <div className="mx-auto flex h-14 max-w-6xl items-center justify-between px-8">
         <a href="#" className="flex items-center gap-3" aria-label="Kodeck home">
@@ -617,8 +623,8 @@ function Nav() {
             href="https://github.com/vladzima/kodeck"
             target="_blank"
             rel="noopener noreferrer"
-            className="inline-flex cursor-pointer items-center gap-2 rounded-sm bg-secondary px-4 py-2 text-sm text-foreground transition-colors hover:bg-muted"
-            style={{ border: "1px solid oklch(100% 0 0 / 0.06)" }}
+            className="inline-flex cursor-pointer items-center gap-2 rounded-sm bg-transparent px-4 py-2 text-sm text-foreground transition-colors hover:bg-muted"
+            style={{ border: "1px solid oklch(100% 0 0 / 0.1)" }}
           >
             <GithubIcon />
             GitHub
@@ -631,19 +637,8 @@ function Nav() {
 
 function GithubIcon() {
   return (
-    <svg
-      width="16"
-      height="16"
-      viewBox="0 0 24 24"
-      fill="none"
-      stroke="currentColor"
-      strokeWidth="2"
-      strokeLinecap="round"
-      strokeLinejoin="round"
-      aria-hidden="true"
-    >
-      <path d="M15 22v-4a4.8 4.8 0 0 0-1-3.5c3 0 6-2 6-5.5.08-1.25-.27-2.48-1-3.5.28-1.15.28-2.35 0-3.5 0 0-1 0-3 1.5-2.64-.5-5.36-.5-8 0C6 2 5 2 5 2c-.3 1.15-.3 2.35 0 3.5A5.403 5.403 0 0 0 4 9c0 3.5 3 5.5 6 5.5-.39.49-.68 1.05-.85 1.65-.17.6-.22 1.23-.15 1.85v4" />
-      <path d="M9 18c-4.51 2-5-2-7-2" />
+    <svg width="16" height="16" viewBox="0 0 24 24" aria-hidden="true">
+      <path fill="currentColor" d="M5 2h4v2H7v2H5zm0 10H3V6h2zm2 2H5v-2h2zm2 2v-2H7v2H3v-2H1v2h2v2h4v4h2v-4h2v-2zm0 0v2H7v-2zm6-12v2H9V4zm4 2h-2V4h-2V2h4zm0 6V6h2v6zm-2 2v-2h2v2zm-2 2v-2h2v2zm0 2h-2v-2h2zm0 0h2v4h-2z" />
     </svg>
   );
 }
@@ -1162,8 +1157,8 @@ function ConfigSidebar() {
 function AppMockup() {
   return (
     <div
-      className="overflow-hidden rounded-lg shadow-[0_0_80px_-20px_oklch(47.3%_0.137_46.201_/_0.08)]"
-      style={{ border: "1px solid oklch(100% 0 0 / 0.06)" }}
+      className="overflow-hidden rounded-t-lg shadow-[0_0_80px_-20px_oklch(47.3%_0.137_46.201_/_0.08)]"
+      style={{ border: "1px solid oklch(100% 0 0 / 0.06)", borderBottom: "none" }}
     >
       {/* window chrome */}
       <div
@@ -1214,30 +1209,30 @@ function FeatureCard({
 
 /* ── coming soon card ── */
 function ComingSoonCard({
-  icon: Icon,
+  icon,
   title,
   description,
   delay = 0,
 }: {
-  icon: React.ComponentType<{ className?: string }>;
+  icon: React.ReactNode;
   title: string;
   description: string;
   delay?: number;
 }) {
   return (
     <div
-      className="reveal rounded-lg bg-card/30 p-7"
-      style={{ transitionDelay: `${delay}ms`, border: "1px solid oklch(100% 0 0 / 0.06)" }}
+      className="reveal rounded-lg p-7"
+      style={{ transitionDelay: `${delay}ms`, border: "1px solid oklch(100% 0 0 / 0.12)", background: "oklch(20% 0.005 260 / 0.85)" }}
     >
       <div className="mb-4 flex items-start justify-between">
         <div
-          className="inline-flex rounded-sm bg-secondary p-3"
-          style={{ border: "1px solid oklch(100% 0 0 / 0.06)" }}
+          className="inline-flex rounded-sm p-3"
+          style={{ border: "1px solid oklch(100% 0 0 / 0.1)" }}
         >
-          <Icon className="h-5 w-5 text-muted-foreground" />
+          {icon}
         </div>
         <span
-          className="inline-flex items-center rounded-sm bg-primary/10 px-2.5 py-1 font-mono text-[11px] font-medium tracking-wider text-primary-bright uppercase"
+          className="inline-flex items-center rounded-sm px-2.5 py-1 font-mono text-[11px] font-medium tracking-wider text-primary-bright uppercase"
           style={{ border: "1px solid oklch(47.3% 0.137 46.201 / 0.2)" }}
         >
           Soon
@@ -1300,15 +1295,20 @@ export function App() {
       <Nav />
 
       {/* ── hero ── */}
-      <section className="relative pt-36 pb-28 md:pt-48 md:pb-36">
-        {/* gradient orb */}
-        <div
-          className="pointer-events-none absolute -top-40 -left-40 h-[600px] w-[600px] rounded-full opacity-30 blur-[140px]"
-          style={{
-            background: "radial-gradient(circle, oklch(47.3% 0.137 46.201 / 0.2), transparent 70%)",
-          }}
-          aria-hidden="true"
-        />
+      <section className="relative pt-36 md:pt-48">
+        {/* shader background */}
+        <div className="pointer-events-none absolute inset-0 overflow-hidden" aria-hidden="true">
+          <GrainGradient
+            colors={["#c6750c", "#beae60", "#d7cbc6"]}
+            colorBack="#000a0f"
+            softness={0.7}
+            intensity={0.15}
+            noise={0.5}
+            shape="wave"
+            speed={1.14}
+            style={{ width: "100%", height: "130%" }}
+          />
+        </div>
 
         <div className="relative z-10 mx-auto max-w-6xl px-8">
           <div className="max-w-3xl">
@@ -1366,7 +1366,7 @@ export function App() {
             <h1
               className="reveal mb-6 text-4xl leading-[1.1] font-bold tracking-tight text-foreground sm:text-5xl md:text-6xl lg:text-7xl"
               style={{
-                fontFamily: "var(--font-brand)",
+                fontFamily: '"GeistPixelGrid"',
                 transitionDelay: "80ms",
               }}
             >
@@ -1406,7 +1406,7 @@ export function App() {
           </div>
 
           {/* app mockup */}
-          <div className="reveal mt-20 md:mt-24" style={{ transitionDelay: "320ms" }}>
+          <div className="reveal mt-20 -mb-px md:mt-24" style={{ transitionDelay: "320ms" }}>
             <AppMockup />
           </div>
         </div>
@@ -1422,8 +1422,8 @@ export function App() {
               Features
             </span>
             <h2
-              className="mt-4 text-3xl font-bold tracking-tight text-foreground md:text-4xl"
-              style={{ fontFamily: "var(--font-brand)" }}
+              className="mt-4 text-4xl font-bold tracking-tight text-foreground md:text-5xl"
+              style={{ fontFamily: '"GeistPixelGrid"' }}
             >
               Everything you need, nothing you don't
             </h2>
@@ -1441,18 +1441,20 @@ export function App() {
                 className="reveal relative overflow-hidden rounded-lg p-8 lg:col-span-3"
                 style={{
                   border: "1px solid oklch(100% 0 0 / 0.06)",
-                  background:
-                    "linear-gradient(135deg, oklch(21% 0.006 285.885), oklch(17% 0.008 46.2 / 0.4))",
                 }}
               >
-                <div
-                  className="pointer-events-none absolute -right-20 -top-20 h-64 w-64 rounded-full opacity-20 blur-[80px]"
-                  style={{
-                    background:
-                      "radial-gradient(circle, oklch(47.3% 0.137 46.201 / 0.5), transparent 70%)",
-                  }}
-                  aria-hidden="true"
-                />
+                <div className="pointer-events-none absolute inset-0 overflow-hidden" aria-hidden="true">
+                  <Dithering
+                    colorBack="#000000"
+                    colorFront="#241600"
+                    shape="wave"
+                    type="random"
+                    size={6.6}
+                    speed={1}
+                    scale={1.2}
+                    style={{ width: "100%", height: "100%" }}
+                  />
+                </div>
                 <div className="relative z-10">
                   <span
                     className="mb-4 inline-flex items-center rounded-sm bg-primary/15 px-2.5 py-1 font-mono text-[11px] font-medium tracking-wider text-primary-bright uppercase"
@@ -1490,18 +1492,8 @@ export function App() {
                     className="shrink-0 flex h-11 w-11 items-center justify-center rounded-sm bg-primary/15"
                     style={{ border: "1px solid oklch(47.3% 0.137 46.201 / 0.2)" }}
                   >
-                    <svg
-                      width="20"
-                      height="20"
-                      viewBox="0 0 24 24"
-                      fill="none"
-                      stroke="var(--color-primary-bright)"
-                      strokeWidth="2"
-                      strokeLinecap="round"
-                      strokeLinejoin="round"
-                      aria-hidden="true"
-                    >
-                      <path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z" />
+                    <svg width="20" height="20" viewBox="0 0 24 24" aria-hidden="true">
+                      <path fill="var(--color-primary-bright)" d="M5 2h4v2H7v2H5zm0 10H3V6h2zm2 2H5v-2h2zm2 2v-2H7v2H3v-2H1v2h2v2h4v4h2v-4h2v-2zm0 0v2H7v-2zm6-12v2H9V4zm4 2h-2V4h-2V2h4zm0 6V6h2v6zm-2 2v-2h2v2zm-2 2v-2h2v2zm0 2h-2v-2h2zm0 0h2v4h-2z" />
                     </svg>
                   </div>
                   <div>
@@ -1523,11 +1515,12 @@ export function App() {
                   }}
                 >
                   <div
-                    className="shrink-0 flex h-11 w-11 items-center justify-center rounded-sm bg-primary/15 font-mono text-lg leading-none text-primary-bright"
+                    className="shrink-0 flex h-11 w-11 items-center justify-center rounded-sm bg-primary/15"
                     style={{ border: "1px solid oklch(47.3% 0.137 46.201 / 0.2)" }}
-                    aria-hidden="true"
                   >
-                    &gt;_
+                    <svg width="20" height="20" viewBox="0 0 24 24" aria-hidden="true">
+                      <path fill="var(--color-primary-bright)" d="M8 5h2v2H8zM6 7h2v2H6zM4 9h2v2H4zm-2 2h2v2H2zm2 2h2v2H4zm2 2h2v2H6zm2 2h2v2H8zm8-12h-2v2h2zm2 2h-2v2h2zm2 2h-2v2h2zm2 2h-2v2h2zm-2 2h-2v2h2zm-2 2h-2v2h2zm-2 2h-2v2h2z" />
+                    </svg>
                   </div>
                   <div>
                     <h3 className="mb-1 text-base font-semibold text-foreground">DX First</h3>
@@ -1860,23 +1853,15 @@ export function App() {
       <Divider />
 
       {/* ── coming soon ── */}
-      <section id="roadmap" className="relative py-28 md:py-36">
-        <div
-          className="pointer-events-none absolute right-0 -bottom-40 h-[500px] w-[500px] rounded-full opacity-20 blur-[140px]"
-          style={{
-            background: "radial-gradient(circle, oklch(47.3% 0.137 46.201 / 0.3), transparent 70%)",
-          }}
-          aria-hidden="true"
-        />
-
-        <div className="relative z-10 mx-auto max-w-6xl px-8">
+      <section id="roadmap" className="py-28 md:py-36">
+        <div className="mx-auto max-w-6xl px-8">
           <div className="reveal mb-16 text-center">
             <span className="font-mono text-xs tracking-widest text-primary-bright uppercase">
               Roadmap
             </span>
             <h2
-              className="mt-4 text-3xl font-bold tracking-tight text-foreground md:text-4xl"
-              style={{ fontFamily: "var(--font-brand)" }}
+              className="mt-4 text-4xl font-bold tracking-tight text-foreground md:text-5xl"
+              style={{ fontFamily: '"GeistPixelGrid"' }}
             >
               What's next
             </h2>
@@ -1887,18 +1872,18 @@ export function App() {
 
           <div className="mx-auto grid max-w-4xl grid-cols-1 gap-5 md:grid-cols-3">
             <ComingSoonCard
-              icon={Sparkles}
+              icon={<svg width="20" height="20" viewBox="0 0 24 24" aria-hidden="true"><path fill="var(--color-primary-bright)" d="M13 2h-2v4h2zm2 6H9v2H7v4h2v4h6v-4h2v-4h-2zm0 2v4h-2v2h-2v-2H9v-4zM9 20h6v2H9zm14-9v2h-4v-2zM5 13v-2H1v2zm12-7h2v2h-2zm2 0h2V4h-2zM5 6h2v2H5zm0 0V4H3v2z" /></svg>}
               title="Smart Recommendations"
               description="Context-aware suggestions that learn your workflow. Get relevant actions, files, and commands surfaced automatically."
             />
             <ComingSoonCard
-              icon={Send}
+              icon={<svg width="20" height="20" viewBox="0 0 24 24" aria-hidden="true"><path fill="var(--color-primary-bright)" d="M4 2h18v16H6v2H4v-2h2v-2h14V4H4v18H2V2zm5 7H7v2h2zm2 0h2v2h-2zm6 0h-2v2h2z" /></svg>}
               title="Telegram Integration"
               description="Monitor sessions and interact with Claude directly from Telegram. Notifications, approvals, and quick commands on the go."
               delay={80}
             />
             <ComingSoonCard
-              icon={Puzzle}
+              icon={<svg width="20" height="20" viewBox="0 0 24 24" aria-hidden="true"><path fill="var(--color-primary-bright)" d="M15 2h2v2h4v18H3V4h4V2h2v2h6zM9 6H5v2h14V6zm-4 4v10h14V10zm6 2h2v2h2v2h-2v2h-2v-2H9v-2h2z" /></svg>}
               title="Intelligent Plugins"
               description="On-the-fly plugin recommendations tailored to your current context. The right tools, exactly when you need them."
               delay={160}
@@ -1917,8 +1902,8 @@ export function App() {
               Get Started
             </span>
             <h2
-              className="mt-4 text-3xl font-bold tracking-tight text-foreground md:text-4xl"
-              style={{ fontFamily: "var(--font-brand)" }}
+              className="mt-4 text-4xl font-bold tracking-tight text-foreground md:text-5xl"
+              style={{ fontFamily: '"GeistPixelGrid"' }}
             >
               One command away
             </h2>

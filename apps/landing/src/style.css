@@ -3,6 +3,15 @@
 @import "@fontsource-variable/geist-mono";
 @import "@fontsource-variable/space-grotesk";
 
+@font-face {
+  font-family: "GeistPixelGrid";
+  src: url("/GeistPixel-Grid.woff2") format("woff2"),
+       url("/GeistPixel-Grid.ttf") format("truetype");
+  font-display: swap;
+  font-weight: 100 900;
+  font-style: normal;
+}
+
 @theme {
   --font-sans: "Geist Variable", system-ui, sans-serif;
   --font-mono: "Geist Mono Variable", ui-monospace, monospace;
