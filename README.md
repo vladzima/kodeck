@@ -8,7 +8,7 @@ Open-source IDE for [Claude Code](https://docs.anthropic.com/en/docs/claude-code
 npx kodeck-app
 ```
 
-Requires Node.js 22+ and an active [Claude Code](https://docs.anthropic.com/en/docs/claude-code) authentication (OAuth).
+Requires Node.js 22+ and an active [Claude Code](https://docs.anthropic.com/en/docs/claude-code) authentication (OAuth). Opens at `https://kodeck.localhost:1355`.
 
 ## Features
 

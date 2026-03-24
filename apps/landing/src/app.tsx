@@ -230,7 +230,7 @@ function Nav() {
             Roadmap
           </a>
           <a
-            href="https://github.com/nicepkg/kodeck"
+            href="https://github.com/vladzima/kodeck"
             target="_blank"
             rel="noopener noreferrer"
             className="inline-flex cursor-pointer items-center gap-2 rounded-sm bg-secondary px-4 py-2 text-sm text-foreground transition-colors hover:bg-muted"
@@ -755,34 +755,14 @@ function TerminalSnippet() {
       </div>
       <div className="space-y-1 bg-background p-6 font-mono text-sm leading-7 md:p-8">
         <div>
-          <span className="text-muted-foreground/40"># clone & run</span>
-        </div>
-        <div>
           <span className="text-primary-bright">$</span>{" "}
-          <span className="text-foreground">git clone</span>{" "}
-          <span className="text-amber-400/80">
-            https://github.com/nicepkg/kodeck
-          </span>
-        </div>
-        <div>
-          <span className="text-primary-bright">$</span>{" "}
-          <span className="text-foreground">cd kodeck && pnpm install</span>
-        </div>
-        <div>
-          <span className="text-primary-bright">$</span>{" "}
-          <span className="text-foreground">pnpm dev</span>
+          <span className="text-foreground">npx kodeck-app</span>
         </div>
         <div className="pt-2">
           <span className="text-muted-foreground/60">
-            {"  "}Server running at{" "}
+            {"  "}kodeck running at{" "}
           </span>
-          <span className="text-primary-bright">http://localhost:3001</span>
-        </div>
-        <div>
-          <span className="text-muted-foreground/60">
-            {"  "}Client running at{" "}
-          </span>
-          <span className="text-primary-bright">http://localhost:5173</span>
+          <span className="text-primary-bright">https://kodeck.localhost:1355</span>
         </div>
       </div>
     </div>
@@ -825,12 +805,11 @@ export function App() {
 
         <div className="relative z-10 mx-auto max-w-6xl px-8">
           <div className="max-w-3xl">
-            {/* eyebrow */}
-            <div className="reveal mb-8 flex items-center gap-3">
-              <span className="h-px w-8 bg-primary" />
-              <span className="font-mono text-xs tracking-widest text-primary-bright uppercase">
-                Open Source
-              </span>
+            {/* npx command */}
+            <div className="reveal mb-8">
+              <code className="inline-flex items-center gap-2 rounded-md bg-card px-4 py-2 font-mono text-sm text-primary-bright" style={{ border: "1px solid oklch(100% 0 0 / 0.06)" }}>
+                <span className="text-muted-foreground/50">$</span> npx kodeck-app
+              </code>
             </div>
 
             {/* headline */}
@@ -869,7 +848,7 @@ export function App() {
                 Get Started
               </a>
               <a
-                href="https://github.com/nicepkg/kodeck"
+                href="https://github.com/vladzima/kodeck"
                 target="_blank"
                 rel="noopener noreferrer"
                 className="inline-flex cursor-pointer items-center gap-2.5 rounded-sm bg-transparent px-6 py-3 text-sm font-semibold text-foreground transition-colors hover:bg-secondary focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 focus-visible:ring-offset-background focus-visible:outline-none"
@@ -1159,7 +1138,7 @@ export function App() {
               One command away
             </h2>
             <p className="mx-auto mt-4 mb-12 max-w-md text-base text-muted-foreground">
-              Kodeck is open source and free. Clone it, run it, make it yours.
+              Run one command. Requires Node.js 22+ and Claude Code authentication.
             </p>
           </div>
 
@@ -1172,7 +1151,7 @@ export function App() {
             style={{ transitionDelay: "200ms" }}
           >
             <a
-              href="https://github.com/nicepkg/kodeck"
+              href="https://github.com/vladzima/kodeck"
               target="_blank"
               rel="noopener noreferrer"
               className="inline-flex cursor-pointer items-center gap-2.5 rounded-sm bg-primary px-6 py-3 text-sm font-semibold text-primary-foreground transition-all hover:brightness-110 focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 focus-visible:ring-offset-background focus-visible:outline-none"
