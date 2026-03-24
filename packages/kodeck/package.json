@@ -1,6 +1,6 @@
 {
   "name": "kodeck-app",
-  "version": "0.1.1",
+  "version": "0.2.0",
   "description": "Open-source IDE for Claude Code — multi-project workspace with chat, terminals, and git worktree management",
   "type": "module",
   "bin": {
@@ -12,6 +12,7 @@
   ],
   "dependencies": {
     "node-pty": "1.2.0-beta.12",
+    "portless": "^0.7.2",
     "ws": "^8.18.0"
   },
   "engines": {
