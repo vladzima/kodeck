@@ -1,0 +1,119 @@
+@import "tailwindcss";
+@import "@fontsource-variable/geist";
+@import "@fontsource-variable/geist-mono";
+@import "@fontsource-variable/space-grotesk";
+
+@theme {
+  --font-sans: "Geist Variable", system-ui, sans-serif;
+  --font-mono: "Geist Mono Variable", ui-monospace, monospace;
+  --font-brand: "Space Grotesk Variable", sans-serif;
+
+  --color-background: oklch(14.1% 0.005 285.823);
+  --color-foreground: oklch(98.5% 0 0);
+  --color-card: oklch(21% 0.006 285.885);
+  --color-card-foreground: oklch(98.5% 0 0);
+  --color-primary: oklch(47.3% 0.137 46.201);
+  --color-primary-foreground: oklch(98.7% 0.022 95.277);
+  --color-primary-bright: oklch(76.9% 0.188 70.08);
+  --color-secondary: oklch(27.4% 0.006 286.033);
+  --color-muted: oklch(27.4% 0.006 286.033);
+  --color-muted-foreground: oklch(70.5% 0.015 286.067);
+  --color-border: oklch(100% 0 0 / 0.1);
+  --color-ghost: oklch(100% 0 0 / 0.06);
+  --color-ring: oklch(55.2% 0.016 285.938);
+}
+
+html {
+  scroll-behavior: smooth;
+}
+
+body {
+  font-family: var(--font-sans);
+  background: var(--color-background);
+  color: var(--color-foreground);
+  overflow-x: hidden;
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+}
+
+/* dot grid */
+.dot-grid {
+  background-image: radial-gradient(circle, oklch(100% 0 0 / 0.03) 1px, transparent 1px);
+  background-size: 32px 32px;
+}
+
+/* reveal animations */
+.reveal {
+  opacity: 0;
+  transform: translateY(24px);
+  transition:
+    opacity 0.7s cubic-bezier(0.16, 1, 0.3, 1),
+    transform 0.7s cubic-bezier(0.16, 1, 0.3, 1);
+}
+.reveal.visible {
+  opacity: 1;
+  transform: translateY(0);
+}
+
+/* cursor blink */
+@keyframes blink {
+  50% { opacity: 0; }
+}
+
+/* ── feature illustration animations ── */
+
+@keyframes float {
+  0%, 100% { transform: translateY(0); }
+  50% { transform: translateY(-4px); }
+}
+
+@keyframes pulse-glow {
+  0%, 100% { opacity: 0.15; }
+  50% { opacity: 0.35; }
+}
+
+@keyframes scan-line {
+  0% { transform: translateY(-100%); }
+  100% { transform: translateY(100%); }
+}
+
+@keyframes orbit {
+  0% { transform: rotate(0deg) translateX(14px) rotate(0deg); }
+  100% { transform: rotate(360deg) translateX(14px) rotate(-360deg); }
+}
+
+@keyframes type-cursor {
+  0%, 100% { opacity: 1; }
+  50% { opacity: 0; }
+}
+
+@keyframes slide-in {
+  0% { transform: translateX(-6px); opacity: 0; }
+  100% { transform: translateX(0); opacity: 1; }
+}
+
+@keyframes rotate-slow {
+  from { transform: rotate(0deg); }
+  to { transform: rotate(360deg); }
+}
+
+@keyframes dash-flow {
+  to { stroke-dashoffset: -16; }
+}
+
+@keyframes scale-pulse {
+  0%, 100% { transform: scale(1); }
+  50% { transform: scale(1.08); }
+}
+
+/* reduced motion */
+@media (prefers-reduced-motion: reduce) {
+  .reveal {
+    transition: none;
+    opacity: 1;
+    transform: none;
+  }
+  .feat-anim * {
+    animation: none !important;
+  }
+}
