@@ -27,7 +27,7 @@ export function startServer(
   const wss = new WebSocketServer({ server: httpServer, path: "/ws" });
 
   wss.on("connection", (ws) => {
-    console.log("client connected");
+    if (!process.env.KODECK_LIB_MODE) console.log("client connected");
     registerClient(ws);
     ws.on("message", (data: { toString(): string }) => {
       handleMessage(ws, data.toString()).catch((err: unknown) => {
@@ -35,7 +35,7 @@ export function startServer(
       });
     });
     ws.on("close", () => {
-      console.log("client disconnected");
+      if (!process.env.KODECK_LIB_MODE) console.log("client disconnected");
       unregisterClient(ws);
     });
   });

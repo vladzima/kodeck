@@ -474,7 +474,7 @@ async function handleSessionCreate(
   ws: WebSocket,
   msg: ClientMessage & { type: "session.create" },
 ): Promise<void> {
-  console.log(`creating ${msg.sessionType} session in ${msg.worktreePath}`);
+  if (!process.env.KODECK_LIB_MODE) console.log(`creating ${msg.sessionType} session in ${msg.worktreePath}`);
   const sessionId = randomUUID();
   const info: SessionInfo = {
     id: sessionId,
@@ -960,7 +960,7 @@ export async function handleMessage(ws: WebSocket, raw: string): Promise<void> {
             if (p.slashCommands) sessionSlashCommands.set(p.info.id, p.slashCommands);
             if (p.meta) sessionMetas.set(p.info.id, p.meta);
           }
-          console.log(`[session.list] loaded ${persisted.length} sessions from disk`);
+          if (!process.env.KODECK_LIB_MODE) console.log(`[session.list] loaded ${persisted.length} sessions from disk`);
         }
 
         // Build response from in-memory state
@@ -989,7 +989,7 @@ export async function handleMessage(ws: WebSocket, raw: string): Promise<void> {
           if (perm) permissions[id] = perm;
         }
 
-        console.log(
+        if (!process.env.KODECK_LIB_MODE) console.log(
           `[session.list] sending ${restoredSessions.length} sessions (${Object.values(states).filter((s) => s !== "idle").length} active)`,
         );
         send(ws, {

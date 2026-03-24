@@ -2,7 +2,7 @@
 import { dirname, resolve } from "node:path";
 import { fileURLToPath } from "node:url";
 import { exec, execSync, spawn } from "node:child_process";
-import { readFileSync } from "node:fs";
+import { readFileSync, openSync, writeSync, closeSync } from "node:fs";
 
 const __dirname = dirname(fileURLToPath(import.meta.url));
 const clientDir = resolve(__dirname, "..", "dist", "client");
@@ -18,26 +18,48 @@ const amberDim = (s) => `\x1b[2;38;2;196;162;97m${s}\x1b[0m`;
 
 const sleep = (ms) => new Promise((r) => setTimeout(r, ms));
 
+function openTTY() {
+  try {
+    return openSync("/dev/tty", "w");
+  } catch {
+    return null;
+  }
+}
+
 async function printBanner(url) {
-  if (!process.stdout.isTTY) {
-    console.log(`\n  kodeck v${pkg.version}\n\n  Local:   ${url}\n`);
+  const fd = openTTY();
+
+  if (!fd) {
+    // No TTY available (CI, piped, etc.) — plain text fallback
+    console.log(`\n  ❯❯  kodeck v${pkg.version}\n\n  ➜  Local:   ${url}\n`);
     return;
   }
 
-  process.stdout.write("\n  ");
-  await sleep(300);
-  process.stdout.write(amberDim("❯"));
-  await sleep(200);
-  process.stdout.write("\x1b[1D");
-  process.stdout.write(amber("❯"));
+  const w = (s) => writeSync(fd, s);
+  const cl = "\x1b[2K\r"; // clear line + carriage return
+
+  w("\n"); // blank line
   await sleep(400);
-  process.stdout.write(amberDim("❯"));
-  await sleep(200);
-  process.stdout.write(`  ${boldCyan("kodeck")} ${dim(`v${pkg.version}`)}\n`);
-  await sleep(200);
-  console.log("");
-  console.log(`  ${green("➜")}  ${bold("Local:")}   ${cyan(url)}`);
-  console.log("");
+
+  // First chevron fades in dim
+  w(`  ${amberDim("❯")}`);
+  await sleep(350);
+
+  // First chevron lights up bright
+  w(`${cl}  ${amber("❯")}`);
+  await sleep(400);
+
+  // Second chevron fades in dim
+  w(`${cl}  ${amber("❯")}${amberDim("❯")}`);
+  await sleep(350);
+
+  // Both bright + title appears
+  w(`${cl}  ${amber("❯❯")}  ${boldCyan("kodeck")} ${dim(`v${pkg.version}`)}\n`);
+  await sleep(250);
+
+  w(`\n  ${green("➜")}  ${bold("Local:")}   ${cyan(url)}\n\n`);
+
+  closeSync(fd);
 }
 
 // Second invocation — portless has set PORT and PORTLESS_URL
@@ -56,7 +78,11 @@ if (process.env.PORTLESS_URL) {
   exec(`${openCmd} ${url}`);
 
   process.on("SIGINT", () => {
-    console.log(dim("\n  Shutting down...\n"));
+    const fd = openTTY();
+    if (fd) {
+      writeSync(fd, dim("\n  Shutting down...\n") + "\n");
+      closeSync(fd);
+    }
     server.close();
     process.exit(0);
   });
@@ -72,10 +98,12 @@ if (process.env.PORTLESS_URL) {
     "portless",
     ["run", "--name", "kodeck", process.execPath, fileURLToPath(import.meta.url)],
     {
-      stdio: "inherit",
+      stdio: ["inherit", "pipe", "inherit"],
       env: { ...process.env, KODECK_LIB_MODE: "1", KODECK_CLIENT_DIR: clientDir },
     },
   );
+  // Suppress portless verbose stdout (banner uses /dev/tty instead)
+  child.stdout.resume();
   child.on("close", (code) => process.exit(code ?? 0));
   process.on("SIGINT", () => child.kill("SIGINT"));
 }
