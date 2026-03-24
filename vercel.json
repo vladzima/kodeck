@@ -4,5 +4,5 @@
   "outputDirectory": "apps/landing/dist",
   "installCommand": "pnpm install --no-frozen-lockfile",
   "framework": "vite",
-  "ignoreCommand": "git diff --quiet HEAD^ HEAD -- apps/landing/ packages/"
+  "ignoreCommand": "git diff --quiet HEAD^ HEAD -- apps/landing/ packages/ vercel.json package.json pnpm-lock.yaml"
 }
