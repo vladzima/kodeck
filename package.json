@@ -1,13 +1,15 @@
 {
-  "name": "kodeck",
+  "name": "@kodeck/root",
   "version": "0.0.0",
   "private": true,
   "type": "module",
   "scripts": {
     "ready": "vp fmt && vp lint && vp run test -r && vp run build -r",
     "dev": "concurrently -n server,client -c blue,green \"vp run server#dev\" \"vp run client#dev\"",
+    "dev:local": "concurrently -n server,client -c blue,green \"vp run server#dev\" \"portless run --name kodeck vp run client#dev\"",
     "tauri:dev": "pnpm --filter @kodeck/desktop tauri dev",
-    "tauri:build": "pnpm --filter @kodeck/server build:sidecar && pnpm --filter @kodeck/desktop tauri build && node scripts/patch-app-bundle.mjs"
+    "tauri:build": "pnpm --filter @kodeck/server build:sidecar && pnpm --filter @kodeck/desktop tauri build && node scripts/patch-app-bundle.mjs",
+    "build:npm": "node scripts/build-npm.mjs"
   },
   "dependencies": {
     "@fontsource-variable/geist-mono": "^5.2.7"

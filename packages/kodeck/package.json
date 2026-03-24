@@ -1,0 +1,35 @@
+{
+  "name": "kodeck",
+  "version": "0.1.0",
+  "description": "Open-source IDE for Claude Code — multi-project workspace with chat, terminals, and git worktree management",
+  "type": "module",
+  "bin": {
+    "kodeck": "bin/kodeck.mjs"
+  },
+  "files": [
+    "bin/",
+    "dist/"
+  ],
+  "dependencies": {
+    "node-pty": "1.2.0-beta.12",
+    "ws": "^8.18.0"
+  },
+  "engines": {
+    "node": ">=22.12.0"
+  },
+  "license": "MIT",
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/vladzima/kodeck"
+  },
+  "homepage": "https://kodeck.dev",
+  "keywords": [
+    "claude",
+    "claude-code",
+    "ide",
+    "terminal",
+    "ai",
+    "workspace",
+    "worktree"
+  ]
+}

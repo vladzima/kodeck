@@ -1,30 +1,71 @@
+import { createServer } from "node:http";
 import { WebSocketServer } from "ws";
 import { handleMessage, cleanupAllSessions, registerClient, unregisterClient } from "./router.ts";
+import { serveStatic } from "./static.ts";
 
-const PORT = Number(process.env.KODECK_PORT) || 3001;
-const wss = new WebSocketServer({ port: PORT });
+export interface ServerOptions {
+  port?: number;
+  clientDir?: string;
+}
 
-wss.on("listening", () => {
-  console.log(`kodeck server listening on ws://localhost:${PORT}`);
-});
+export function startServer(
+  options: ServerOptions = {},
+): Promise<{ port: number; close: () => void }> {
+  const port =
+    options.port ?? (Number(process.env.PORT) || Number(process.env.KODECK_PORT) || 3001);
+  const clientDir = options.clientDir ?? process.env.KODECK_CLIENT_DIR;
 
-wss.on("connection", (ws) => {
-  console.log("client connected");
-  registerClient(ws);
-  ws.on("message", (data: { toString(): string }) => {
-    handleMessage(ws, data.toString()).catch((err: unknown) => {
-      console.error("Error handling message:", err);
+  const httpServer = createServer((req, res) => {
+    if (clientDir) {
+      serveStatic(clientDir, req, res);
+    } else {
+      res.writeHead(200, { "Content-Type": "text/plain" });
+      res.end("kodeck server");
+    }
+  });
+
+  const wss = new WebSocketServer({ server: httpServer, path: "/ws" });
+
+  wss.on("connection", (ws) => {
+    console.log("client connected");
+    registerClient(ws);
+    ws.on("message", (data: { toString(): string }) => {
+      handleMessage(ws, data.toString()).catch((err: unknown) => {
+        console.error("Error handling message:", err);
+      });
+    });
+    ws.on("close", () => {
+      console.log("client disconnected");
+      unregisterClient(ws);
     });
   });
-  ws.on("close", () => {
-    console.log("client disconnected");
-    unregisterClient(ws);
-  });
-});
 
-process.on("SIGINT", () => {
-  console.log("Shutting down...");
-  cleanupAllSessions();
-  wss.close();
-  process.exit(0);
-});
+  return new Promise((resolve) => {
+    httpServer.listen(port, () => {
+      if (clientDir) {
+        console.log(`kodeck running at http://localhost:${port}`);
+      } else {
+        console.log(`kodeck server listening on ws://localhost:${port}/ws`);
+      }
+      resolve({
+        port,
+        close() {
+          cleanupAllSessions();
+          wss.close();
+          httpServer.close();
+        },
+      });
+    });
+  });
+}
+
+// Auto-start when run directly (dev mode / sidecar)
+if (!process.env.KODECK_LIB_MODE) {
+  void startServer().then((server) => {
+    process.on("SIGINT", () => {
+      console.log("Shutting down...");
+      server.close();
+      process.exit(0);
+    });
+  });
+}

@@ -33,6 +33,7 @@ apps/desktop/src-tauri/binaries/kodeck-server-*
 apps/desktop/src-tauri/binaries/node_modules/
 apps/desktop/src-tauri/gen/
 apps/server/dist/
+packages/kodeck/dist/
 
 # Planning docs
 docs/
