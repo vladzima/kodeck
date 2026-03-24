@@ -806,22 +806,23 @@ export function App() {
         <div className="relative z-10 mx-auto max-w-6xl px-8">
           <div className="max-w-3xl">
             {/* npx command */}
-            <div className="reveal mb-8">
-              <code className="group inline-flex items-center gap-2 rounded-md bg-card px-4 py-2 font-mono text-sm text-primary-bright" style={{ border: "1px solid oklch(100% 0 0 / 0.06)" }}>
+            <div className="reveal mb-8 inline-flex items-center gap-3">
+              <code className="inline-flex items-center gap-2 rounded-md bg-card px-4 py-2 font-mono text-sm text-primary-bright" style={{ border: "1px solid oklch(100% 0 0 / 0.06)" }}>
                 <span className="text-muted-foreground/50">$</span> npx kodeck-app
-                <button
-                  type="button"
-                  className="ml-2 cursor-pointer rounded p-1 text-muted-foreground/40 transition-colors hover:text-primary-bright"
-                  onClick={() => {
-                    navigator.clipboard.writeText("npx kodeck-app");
-                    const btn = document.getElementById("copy-ok");
-                    if (btn) { btn.style.opacity = "1"; setTimeout(() => { btn.style.opacity = "0"; }, 1500); }
-                  }}
-                >
-                  <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><rect x="9" y="9" width="13" height="13" rx="2"/><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"/></svg>
-                </button>
-                <span id="copy-ok" className="text-xs text-primary-bright transition-opacity duration-300" style={{ opacity: 0 }}>Copied!</span>
               </code>
+              <button
+                type="button"
+                className="cursor-pointer rounded-md bg-card p-2 text-muted-foreground transition-colors hover:text-primary-bright"
+                style={{ border: "1px solid oklch(100% 0 0 / 0.06)" }}
+                onClick={() => {
+                  navigator.clipboard.writeText("npx kodeck-app");
+                  const el = document.getElementById("copy-ok");
+                  if (el) { el.style.opacity = "1"; setTimeout(() => { el.style.opacity = "0"; }, 1500); }
+                }}
+              >
+                <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><rect x="9" y="9" width="13" height="13" rx="2"/><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"/></svg>
+              </button>
+              <span id="copy-ok" className="text-xs text-primary-bright transition-opacity duration-300" style={{ opacity: 0 }}>Copied!</span>
             </div>
 
             {/* headline */}
