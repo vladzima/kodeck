@@ -25,6 +25,7 @@
 
 html {
   scroll-behavior: smooth;
+  overflow-x: clip;
 }
 
 body {
@@ -57,53 +58,95 @@ body {
 
 /* cursor blink */
 @keyframes blink {
-  50% { opacity: 0; }
+  50% {
+    opacity: 0;
+  }
 }
 
 /* ── feature illustration animations ── */
 
 @keyframes float {
-  0%, 100% { transform: translateY(0); }
-  50% { transform: translateY(-4px); }
+  0%,
+  100% {
+    transform: translateY(0);
+  }
+  50% {
+    transform: translateY(-4px);
+  }
 }
 
 @keyframes pulse-glow {
-  0%, 100% { opacity: 0.15; }
-  50% { opacity: 0.35; }
+  0%,
+  100% {
+    opacity: 0.15;
+  }
+  50% {
+    opacity: 0.35;
+  }
 }
 
 @keyframes scan-line {
-  0% { transform: translateY(-100%); }
-  100% { transform: translateY(100%); }
+  0% {
+    transform: translateY(-100%);
+  }
+  100% {
+    transform: translateY(100%);
+  }
 }
 
 @keyframes orbit {
-  0% { transform: rotate(0deg) translateX(14px) rotate(0deg); }
-  100% { transform: rotate(360deg) translateX(14px) rotate(-360deg); }
+  0% {
+    transform: rotate(0deg) translateX(14px) rotate(0deg);
+  }
+  100% {
+    transform: rotate(360deg) translateX(14px) rotate(-360deg);
+  }
 }
 
 @keyframes type-cursor {
-  0%, 100% { opacity: 1; }
-  50% { opacity: 0; }
+  0%,
+  100% {
+    opacity: 1;
+  }
+  50% {
+    opacity: 0;
+  }
 }
 
 @keyframes slide-in {
-  0% { transform: translateX(-6px); opacity: 0; }
-  100% { transform: translateX(0); opacity: 1; }
+  0% {
+    transform: translateX(-6px);
+    opacity: 0;
+  }
+  100% {
+    transform: translateX(0);
+    opacity: 1;
+  }
 }
 
 @keyframes rotate-slow {
-  from { transform: rotate(0deg); }
-  to { transform: rotate(360deg); }
+  from {
+    transform: rotate(0deg);
+  }
+  to {
+    transform: rotate(360deg);
+  }
 }
 
 @keyframes dash-flow {
-  to { stroke-dashoffset: -16; }
+  to {
+    stroke-dashoffset: -16;
+  }
 }
 
 @keyframes scale-pulse {
-  0%, 100% { transform: scale(1); }
-  50% { transform: scale(1.08); }
+  0%,
+  100% {
+    transform: scale(1);
+  }
+  50% {
+    transform: scale(1.08);
+  }
 }
 
 /* reduced motion */
