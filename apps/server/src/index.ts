@@ -40,7 +40,32 @@ export function startServer(
     });
   });
 
-  return new Promise((resolve) => {
+  return new Promise((resolve, reject) => {
+    httpServer.on("error", (err: NodeJS.ErrnoException) => {
+      if (err.code === "EADDRINUSE" && !options.port && !process.env.PORT && !process.env.KODECK_PORT) {
+        // No explicit port requested — try a random free port
+        httpServer.listen(0, () => {
+          const addr = httpServer.address();
+          const actualPort = typeof addr === "object" && addr ? addr.port : 0;
+          if (clientDir) {
+            console.log(`kodeck running at http://localhost:${actualPort}`);
+          } else {
+            console.log(`kodeck server listening on ws://localhost:${actualPort}/ws`);
+          }
+          resolve({
+            port: actualPort,
+            close() {
+              cleanupAllSessions();
+              wss.close();
+              httpServer.close();
+            },
+          });
+        });
+      } else {
+        reject(err);
+      }
+    });
+
     httpServer.listen(port, () => {
       if (clientDir) {
         console.log(`kodeck running at http://localhost:${port}`);
