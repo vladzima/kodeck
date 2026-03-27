@@ -1492,8 +1492,15 @@ export function App() {
                     className="shrink-0 flex h-11 w-11 items-center justify-center rounded-sm bg-primary/15"
                     style={{ border: "1px solid oklch(47.3% 0.137 46.201 / 0.2)" }}
                   >
-                    <svg width="20" height="20" viewBox="0 0 24 24" aria-hidden="true">
-                      <path fill="var(--color-primary-bright)" d="M5 2h4v2H7v2H5zm0 10H3V6h2zm2 2H5v-2h2zm2 2v-2H7v2H3v-2H1v2h2v2h4v4h2v-4h2v-2zm0 0v2H7v-2zm6-12v2H9V4zm4 2h-2V4h-2V2h4zm0 6V6h2v6zm-2 2v-2h2v2zm-2 2v-2h2v2zm0 2h-2v-2h2zm0 0h2v4h-2z" />
+                    <svg width="20" height="20" viewBox="0 0 24 24" fill="none" aria-hidden="true">
+                      <path d="M3.302 10.172L1.307 11.254l1.839.705 2.415.15 4.013 3.473-.382 5.984 2.294-2.194v-4.83l-4.056-3.549-4.128-.82Z" fill="var(--color-primary-bright)" fillOpacity=".3" />
+                      <path d="M19.693 22.367V9.867l3-1.5v12.5l-3 1.5Z" fill="var(--color-primary-bright)" fillOpacity=".3" />
+                      <path d="M19.693 9.867l3-1.5M5.693 2.867l14 7 .001 12.5" stroke="var(--color-primary-bright)" />
+                      <path d="M9.442 7.948c0 .583-.393.819-.877.527-.485-.29-.877-.999-.877-1.582 0-.582.393-.818.877-.527.485.291.877 1 .877 1.582ZM12.316 9.386c0 .582-.393.818-.877.527-.485-.291-.878-1-.878-1.582 0-.583.393-.819.878-.527.484.291.877 1 .877 1.582Z" fill="var(--color-primary-bright)" />
+                      <path d="M5.693 10.735V3.485c0-.379.214-.725.553-.896l1.776-.888a1.25 1.25 0 0 1 1.342 0l12.776 6.388c.339.17.553.516.553.895v11.264c0 .379-.214.725-.553.895l-1.78.89a1.25 1.25 0 0 1-1.336-.008L11.516 18.317" stroke="var(--color-primary-bright)" />
+                      <path d="M6.75 22.555c1.547-.097 2.56-1.228 2.686-3.109l.257-3.841-.245-.153a15.3 15.3 0 0 1-3.729-3.098.375.375 0 0 0-.4-.161 12.3 12.3 0 0 1-3.626-.559l-.345-.126" stroke="var(--color-primary-bright)" strokeMiterlimit="10" />
+                      <path d="M1.364 11.711l.222 3.538a8.72 8.72 0 0 0 2.76 6.073l1.05 1.137a.375.375 0 0 0 .399.16l.975-.062c.428-.027.817-.137 1.16-.323 2.789-1.503 3.407-1.982 3.536-3.907l.223-3.332a1.125 1.125 0 0 0-.464-.923 15.8 15.8 0 0 1-3.666-3.11.188.188 0 0 0-.16-.064 9.2 9.2 0 0 1-3.722-.658 1.125 1.125 0 0 0-.817.041l-.945.472a.938.938 0 0 0-.551.957Z" stroke="var(--color-primary-bright)" strokeMiterlimit="10" strokeLinecap="square" />
+                      <path d="M9.693 15.609l1.856-1.921M7.617 11.088l-2.181 1.091" stroke="var(--color-primary-bright)" />
                     </svg>
                   </div>
                   <div>
@@ -1518,8 +1525,16 @@ export function App() {
                     className="shrink-0 flex h-11 w-11 items-center justify-center rounded-sm bg-primary/15"
                     style={{ border: "1px solid oklch(47.3% 0.137 46.201 / 0.2)" }}
                   >
-                    <svg width="20" height="20" viewBox="0 0 24 24" aria-hidden="true">
-                      <path fill="var(--color-primary-bright)" d="M8 5h2v2H8zM6 7h2v2H6zM4 9h2v2H4zm-2 2h2v2H2zm2 2h2v2H4zm2 2h2v2H6zm2 2h2v2H8zm8-12h-2v2h2zm2 2h-2v2h2zm2 2h-2v2h2zm2 2h-2v2h2zm-2 2h-2v2h2zm-2 2h-2v2h2zm-2 2h-2v2h2z" />
+                    <svg width="20" height="20" viewBox="0 0 24 24" fill="none" aria-hidden="true">
+                      <path d="M12 19v-6l1-.5.5-1.5L19 8l1 1v6l-1.5 1.5.5 1.5-5.5 2.5L12 19Z" fill="var(--color-primary-bright)" fillOpacity=".3" />
+                      <path d="M18.845 17.75l-5.36 2.741M5.156 8.25L10.5 10.983M13.5 10.983l5.345-2.733M12 12.75v6.5M20 8.75v6.5M4 8.75v6.5M5.5 6.574l5.211-2.665M13.289 3.909L18.5 6.574M5.156 17.75l5.344 2.733" stroke="var(--color-primary-bright)" />
+                      <circle cx="12" cy="3.25" r="1.5" stroke="var(--color-primary-bright)" strokeLinecap="square" />
+                      <circle cx="4" cy="7.25" r="1.5" stroke="var(--color-primary-bright)" strokeLinecap="square" />
+                      <circle cx="20" cy="7.25" r="1.5" stroke="var(--color-primary-bright)" strokeLinecap="square" />
+                      <circle cx="20" cy="16.75" r="1.5" stroke="var(--color-primary-bright)" strokeLinecap="square" />
+                      <circle cx="4" cy="16.75" r="1.5" stroke="var(--color-primary-bright)" strokeLinecap="square" />
+                      <circle cx="12" cy="11.25" r="1.5" stroke="var(--color-primary-bright)" strokeLinecap="square" />
+                      <circle cx="12" cy="20.75" r="1.5" stroke="var(--color-primary-bright)" strokeLinecap="square" />
                     </svg>
                   </div>
                   <div>
@@ -1872,18 +1887,18 @@ export function App() {
 
           <div className="mx-auto grid max-w-4xl grid-cols-1 gap-5 md:grid-cols-3">
             <ComingSoonCard
-              icon={<svg width="20" height="20" viewBox="0 0 24 24" aria-hidden="true"><path fill="var(--color-primary-bright)" d="M13 2h-2v4h2zm2 6H9v2H7v4h2v4h6v-4h2v-4h-2zm0 2v4h-2v2h-2v-2H9v-4zM9 20h6v2H9zm14-9v2h-4v-2zM5 13v-2H1v2zm12-7h2v2h-2zm2 0h2V4h-2zM5 6h2v2H5zm0 0V4H3v2z" /></svg>}
+              icon={<svg width="20" height="20" viewBox="0 0 24 24" fill="none" aria-hidden="true"><path d="M2.113 7.748c.065-1.497 1.177-2.131 2.483-1.415 1.307.715 2.313 2.509 2.249 4.006-.065 1.497-1.177 2.13-2.483 1.415-1.307-.716-2.314-2.509-2.249-4.006Z" fill="var(--color-primary-bright)" fillOpacity=".3" /><path d="M10.156 11.393c.064-1.497 1.12-1.907 2.426-1.192 1.307.716 2.327 2.64 2.263 4.138-.053 1.206-1.248 1.993-2.554 1.278-1.307-.716-2.2-2.727-2.135-4.224Z" fill="var(--color-primary-bright)" fillOpacity=".3" /><path d="M8.658 2.35L6.484 3.876C18.245-.432 23.445 18.728 13.29 22.178l2.883-.928 2.881-2.03 1.631-2.281 1.256-2.923V11.06l-.613-2.668-2.346-3.605-2.713-1.877-3.4-.906-4.21.347Z" fill="var(--color-primary-bright)" fillOpacity=".3" /><path d="M2.368 9.382l-.051.11A10.5 10.5 0 0 0 2.02 12.65c.359 5.511 5.117 9.688 10.628 9.33 5.512-.36 9.689-5.118 9.33-10.63-.358-5.511-5.117-9.688-10.628-9.329A10.5 10.5 0 0 0 4.152 5.8l-.206.243" stroke="var(--color-primary-bright)" /><path d="M5.598 14a5.63 5.63 0 0 0 2.65 3.541 2.25 2.25 0 0 0 2.442-.394" stroke="var(--color-primary-bright)" strokeLinecap="round" /><path d="M10 12c-1-1.5-1.573-2.451-3-1.5M14.5 12.5l2.586-1.293A1.5 1.5 0 0 1 19 12" stroke="var(--color-primary-bright)" strokeLinecap="round" /><path d="M2.113 7.748c.065-1.497 1.177-2.131 2.483-1.415 1.307.715 2.314 2.509 2.249 4.006-.065 1.497-1.177 2.13-2.483 1.415-1.307-.716-2.314-2.509-2.249-4.006Z" stroke="var(--color-primary-bright)" /><path d="M10.017 11.415c.065-1.497 1.177-2.13 2.483-1.415 1.307.716 2.314 2.509 2.249 4.006-.065 1.497-1.177 2.131-2.483 1.415-1.307-.716-2.314-2.509-2.249-4.006Z" stroke="var(--color-primary-bright)" /></svg>}
               title="Smart Recommendations"
               description="Context-aware suggestions that learn your workflow. Get relevant actions, files, and commands surfaced automatically."
             />
             <ComingSoonCard
-              icon={<svg width="20" height="20" viewBox="0 0 24 24" aria-hidden="true"><path fill="var(--color-primary-bright)" d="M4 2h18v16H6v2H4v-2h2v-2h14V4H4v18H2V2zm5 7H7v2h2zm2 0h2v2h-2zm6 0h-2v2h2z" /></svg>}
+              icon={<svg width="20" height="20" viewBox="0 0 24 24" fill="none" aria-hidden="true"><path d="M17.5 22.5V10l3-1.5V21l-3 1.5Z" fill="var(--color-primary-bright)" fillOpacity=".3" /><path d="M17.5 10l3-1.5M3.5 3l14 7v12.5" stroke="var(--color-primary-bright)" /><path d="M7 9.25l1.75.875.875.438M10.5 14.25l-1.75-.875L7 12.5M14 12.75l-1.75-.875" stroke="var(--color-primary-bright)" strokeLinecap="round" /><path d="M19.947 21.276l-1.776.889a1.25 1.25 0 0 1-1.342 0L7 17.25l-1.82 1.69A1.25 1.25 0 0 1 3.5 18.207V3.618c0-.379.214-.725.553-.895l1.776-.889a1.25 1.25 0 0 1 1.342 0L19.947 8.224c.339.17.553.516.553.894v11.264c0 .379-.214.725-.553.894Z" stroke="var(--color-primary-bright)" /></svg>}
               title="Telegram Integration"
               description="Monitor sessions and interact with Claude directly from Telegram. Notifications, approvals, and quick commands on the go."
               delay={80}
             />
             <ComingSoonCard
-              icon={<svg width="20" height="20" viewBox="0 0 24 24" aria-hidden="true"><path fill="var(--color-primary-bright)" d="M15 2h2v2h4v18H3V4h4V2h2v2h6zM9 6H5v2h14V6zm-4 4v10h14V10zm6 2h2v2h2v2h-2v2h-2v-2H9v-2h2z" /></svg>}
+              icon={<svg width="20" height="20" viewBox="0 0 24 24" fill="none" aria-hidden="true"><path d="M14.5 10.2V20l-2.5-1V10l-.5-1L7 6.5V5l6.441 3.435A2.5 2.5 0 0 1 14.5 10.2Z" fill="var(--color-primary-bright)" fillOpacity=".3" /><path d="M19.5 8.7V18.5l-2.5-1V8.5l-.5-1L12 5V3.5l6.441 3.435A2.5 2.5 0 0 1 19.5 8.7Z" fill="var(--color-primary-bright)" fillOpacity=".3" /><path d="M17 17.5l3.553 1.776A1.25 1.25 0 0 0 22 18.382V6.927c0-.568-.321-1.088-.829-1.342L13.447 1.724a1.25 1.25 0 0 0-1.447.894V5M12 19l3.553 1.776A1.25 1.25 0 0 0 17 19.882V8.427c0-.568-.321-1.088-.829-1.342L8.447 3.224A1.25 1.25 0 0 0 7 4.118V6.5" stroke="var(--color-primary-bright)" /><path d="M2.829 18.415l7.724 3.861A1.25 1.25 0 0 0 12 21.382V9.927c0-.568-.321-1.088-.829-1.342L3.447 4.724A1.25 1.25 0 0 0 2 5.618v11.455c0 .568.321 1.088.829 1.342Z" stroke="var(--color-primary-bright)" /></svg>}
               title="Intelligent Plugins"
               description="On-the-fly plugin recommendations tailored to your current context. The right tools, exactly when you need them."
               delay={160}
