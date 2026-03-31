@@ -1,5 +1,7 @@
 # kodeck
 
+<img src="https://cdn.arbatov.dev/T6mxDufj87sR5IfYPmzVwunQD.png">
+
 Open-source IDE for [Claude Code](https://docs.anthropic.com/en/docs/claude-code). Multi-project workspace with chat, terminals, and git worktree management — all in your browser.
 
 ## Quick Start
