@@ -4,6 +4,9 @@ import type { ChatSessionData } from "./store.ts";
 
 export type SearchScope = "session" | "project" | "all";
 
+let lastSearchQuery = "";
+let lastSearchResults: SearchResult[] = [];
+
 export function performSearch(
   query: string,
   scope: SearchScope,
@@ -16,6 +19,10 @@ export function performSearch(
   },
 ): SearchResult[] {
   if (!query.trim()) return [];
+
+  if (query === lastSearchQuery) {
+    return lastSearchResults;
+  }
 
   const lower = query.toLowerCase();
   const results: SearchResult[] = [];
@@ -55,6 +62,7 @@ export function performSearch(
       const msg = data.messages[i];
       const text = msg.role === "user" ? msg.content : msg.text;
       if (text.toLowerCase().includes(lower)) {
+        console.log("search hit", sessionId, text);
         results.push({
           sessionId,
           sessionName,
@@ -68,6 +76,9 @@ export function performSearch(
       }
     }
   }
+
+  lastSearchQuery = query;
+  lastSearchResults = results;
 
   return results;
 }

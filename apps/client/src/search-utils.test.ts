@@ -200,4 +200,16 @@ describe("performSearch", () => {
     });
     expect(results.every((r) => r.sessionId !== "t1")).toBe(true);
   });
+
+  it("handles cached search results", () => {
+    const results = performSearch("model", "all", {
+      activeSessionId: "s1",
+      selectedWorktreePath: "/wt/main",
+      projects,
+      sessions,
+      chatData,
+    });
+
+    expect(results).toBeTruthy();
+  });
 });
