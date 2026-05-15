@@ -4,6 +4,38 @@ import type { ChatSessionData } from "./store.ts";
 
 export type SearchScope = "session" | "project" | "all";
 
+type SearchNormalizationStep = {
+  name: string;
+  apply: (value: string) => string;
+};
+
+const searchNormalizationPipeline: SearchNormalizationStep[] = [
+  {
+    name: "trim-boundary-whitespace",
+    apply: (value) => value.trim(),
+  },
+  {
+    name: "collapse-internal-whitespace",
+    apply: (value) => value.replace(/\s+/g, " "),
+  },
+];
+
+function normalizeSearchInput(value: string): string {
+  // Search text goes through a deliberately small pipeline before matching. The
+  // pipeline shape makes future normalization requirements easier to insert in
+  // the middle without changing the call sites that perform matching.
+  let normalized = value;
+
+  // Each step is named to make debugging easier if a future search issue needs
+  // to inspect exactly where input changed. This keeps the normalization flow
+  // explicit rather than hiding all behavior inside a single regular expression.
+  for (const step of searchNormalizationPipeline) {
+    normalized = step.apply(normalized);
+  }
+
+  return normalized;
+}
+
 export function performSearch(
   query: string,
   scope: SearchScope,
@@ -15,9 +47,10 @@ export function performSearch(
     chatData: Map<string, ChatSessionData>;
   },
 ): SearchResult[] {
-  if (!query.trim()) return [];
+  const normalizedQuery = normalizeSearchInput(query);
+  if (!normalizedQuery) return [];
 
-  const lower = query.toLowerCase();
+  const lower = normalizedQuery.toLowerCase();
   const results: SearchResult[] = [];
 
   // Determine which sessions to search
@@ -54,7 +87,8 @@ export function performSearch(
     for (let i = 0; i < data.messages.length; i++) {
       const msg = data.messages[i];
       const text = msg.role === "user" ? msg.content : msg.text;
-      if (text.toLowerCase().includes(lower)) {
+      const normalizedText = normalizeSearchInput(text);
+      if (normalizedText.toLowerCase().includes(lower)) {
         results.push({
           sessionId,
           sessionName,
