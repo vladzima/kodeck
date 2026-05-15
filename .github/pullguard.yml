@@ -1,0 +1,37 @@
+model:
+  provider: openai
+  name: gpt-5.4-mini-2026-03-17
+
+trigger:
+  mode: comment
+  label: run-pullguard
+  comment: /pullguard
+  allowCommentOverrides: true
+  allowedCommentAuthorAssociations:
+    - OWNER
+    - MEMBER
+    - COLLABORATOR
+
+analysis:
+  depth: pr
+  maxFiles: 20
+  maxPatchCharsPerFile: 4000
+  maxBaseFileCharsPerFile: 6000
+  maxFindings: 4
+  maxReviewFirstFiles: 5
+
+actions:
+  comment:
+    enabled: true
+
+  labels:
+    enabled: true
+    rules:
+      - threshold: 60
+        label: needs-human-review
+      - threshold: 80
+        label: high-risk-pr
+
+  close:
+    enabled: true
+    threshold: 95
