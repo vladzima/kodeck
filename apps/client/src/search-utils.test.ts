@@ -128,9 +128,10 @@ describe("performSearch", () => {
       sessions,
       chatData,
     });
-    // "fix the model" and "updated the model" are in s2 (same project)
-    // "Hi there!" is in s1 (same project)
+
     const sessionIds = new Set(results.map((r) => r.sessionId));
+    expect(results).toHaveLength(3);
+    expect(sessionIds).toEqual(new Set(["s1", "s2"]));
     expect(sessionIds.has("s3")).toBe(false); // other project excluded
   });
 
