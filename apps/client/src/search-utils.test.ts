@@ -146,6 +146,18 @@ describe("performSearch", () => {
     expect(results[0].text).toBe("hello world");
   });
 
+  it("normalizes repeated whitespace in queries", () => {
+    const results = performSearch("hello   world", "all", {
+      activeSessionId: "s1",
+      selectedWorktreePath: "/wt/main",
+      projects,
+      sessions,
+      chatData,
+    });
+    expect(results).toHaveLength(1);
+    expect(results[0].sessionId).toBe("s1");
+  });
+
   it("includes project and worktree info in results", () => {
     const results = performSearch("hello", "all", {
       activeSessionId: "s1",
